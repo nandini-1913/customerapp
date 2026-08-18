@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../widgets/construction_splash_illustration.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -33,47 +35,40 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.space8,
+            vertical: AppSpacing.space10,
+          ),
           child: Column(
             children: [
               const Spacer(),
               const ConstructionSplashIllustration(),
-              const SizedBox(height: 40),
+              const SizedBox(height: AppSpacing.space10),
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: theme.textTheme.displayLarge?.copyWith(
-                    fontSize: 32,
-                    height: 1.1,
-                    color: AppColors.onBackground,
-                  ),
+                  style: theme.textTheme.headlineLarge,
                   children: [
                     TextSpan(
                       text: 'Shivani',
-                      style: theme.textTheme.displayLarge?.copyWith(
-                        fontSize: 32,
+                      style: theme.textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: AppColors.primary,
                       ),
                     ),
                     TextSpan(
                       text: ' Constructions',
-                      style: theme.textTheme.displayLarge?.copyWith(
-                        fontSize: 32,
+                      style: theme.textTheme.headlineLarge?.copyWith(
                         fontWeight: FontWeight.w400,
-                        color: AppColors.onBackground,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.space2),
               Text.rich(
                 TextSpan(
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                    height: 1.5,
-                  ),
+                  style: theme.textTheme.bodyMedium,
                   children: [
                     const TextSpan(text: '${AppConstants.taglinePrefix} '),
                     TextSpan(
@@ -89,18 +84,18 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               const Spacer(),
               const SizedBox(
-                width: 36,
-                height: 36,
+                width: AppSpacing.space8,
+                height: AppSpacing.space8,
                 child: CircularProgressIndicator(
                   strokeWidth: 3,
                   color: AppColors.primary,
                   backgroundColor: AppColors.primaryContainer,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.space4),
               Text(
                 AppConstants.appVersion,
-                style: theme.textTheme.labelSmall,
+                style: AppTypography.labelSmallMono(),
               ),
             ],
           ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_elevation.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 
 class GoogleSignInButton extends StatelessWidget {
@@ -26,27 +28,24 @@ class GoogleSignInButton extends StatelessWidget {
           backgroundColor: AppColors.surface,
           foregroundColor: AppColors.onSurface,
           side: const BorderSide(color: AppColors.outlineVariant, width: 1.5),
-          elevation: 1,
+          elevation: AppElevation.level0,
           shadowColor: AppColors.shadow,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
         ),
         child: loading
             ? const SizedBox(
-                width: 22,
-                height: 22,
+                width: AppSpacing.space5,
+                height: AppSpacing.space5,
                 child: CircularProgressIndicator(strokeWidth: 2.4),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const _GoogleLogo(size: 20),
-                  const SizedBox(width: 10),
+                  const _GoogleLogo(size: AppSpacing.space5),
+                  const SizedBox(width: AppSpacing.space3),
                   Text(
                     label,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: AppColors.onSurface,
                         ),
                   ),
@@ -82,21 +81,22 @@ class SocialAuthButton extends StatelessWidget {
           backgroundColor: AppColors.surface,
           foregroundColor: AppColors.onSurface,
           side: const BorderSide(color: AppColors.outlineVariant, width: 1.5),
-          elevation: 1,
+          elevation: AppElevation.level0,
           shadowColor: AppColors.shadow,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 20, color: iconColor ?? AppColors.primary),
-            const SizedBox(width: 10),
+            Icon(
+              icon,
+              size: AppSpacing.space5,
+              color: iconColor ?? AppColors.primary,
+            ),
+            const SizedBox(width: AppSpacing.space3),
             Text(
               label,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: AppColors.onSurface,
                   ),
             ),

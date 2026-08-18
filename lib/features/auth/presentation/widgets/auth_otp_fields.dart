@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 
 class AuthOtpFields extends StatefulWidget {
@@ -94,7 +95,9 @@ class AuthOtpFieldsState extends State<AuthOtpFields> {
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(
-              right: index == AppConstants.otpLength - 1 ? 0 : 10,
+              right: index == AppConstants.otpLength - 1
+                  ? 0
+                  : AppSpacing.space3,
             ),
             child: Focus(
               onKeyEvent: (node, event) => _onKey(node, event, index),
@@ -117,7 +120,7 @@ class AuthOtpFieldsState extends State<AuthOtpFields> {
                       : AppColors.surfaceContainer,
                   contentPadding: EdgeInsets.zero,
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    borderRadius: AppRadius.mdAll,
                     borderSide: BorderSide(
                       color: widget.hasError
                           ? AppColors.error
@@ -128,9 +131,10 @@ class AuthOtpFieldsState extends State<AuthOtpFields> {
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    borderRadius: AppRadius.mdAll,
                     borderSide: BorderSide(
-                      color: widget.hasError ? AppColors.error : AppColors.primary,
+                      color:
+                          widget.hasError ? AppColors.error : AppColors.primary,
                       width: 2,
                     ),
                   ),

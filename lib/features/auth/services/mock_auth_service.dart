@@ -21,9 +21,23 @@ class MockAuthService implements AuthService {
     _currentUser = AuthUser(
       id: 'user-email',
       email: email.trim(),
-      fullName: email.split('@').first,
+      // Demo default identity when using the sample email; otherwise derive from email.
+      fullName: email.trim().toLowerCase() == 'rajesh@shivani.com'
+          ? 'Rajesh Kumar'
+          : _displayNameFromEmail(email.trim()),
     );
     return AuthResult.ok(_currentUser!);
+  }
+
+  String _displayNameFromEmail(String email) {
+    final local =
+        email.split('@').first.replaceAll('.', ' ').replaceAll('_', ' ');
+    if (local.isEmpty) return 'Customer';
+    return local
+        .split(' ')
+        .where((p) => p.isNotEmpty)
+        .map((p) => '${p[0].toUpperCase()}${p.substring(1)}')
+        .join(' ');
   }
 
   @override
@@ -78,11 +92,15 @@ class MockAuthService implements AuthService {
     if (otp != AppConstants.mockOtp) {
       return AuthResult.fail('Invalid OTP. Please enter 123456.');
     }
+    // Preserve registration details if the user just registered.
+    final existing = _currentUser;
     _currentUser = AuthUser(
-      id: 'user-otp',
-      email: '',
-      fullName: 'Verified User',
+      id: existing?.id == 'user-register' ? existing!.id : 'user-otp',
+      email: existing?.email ?? '',
+      fullName: existing?.fullName ?? 'Verified User',
       mobileNumber: mobileNumber,
+      businessName: existing?.businessName,
+      role: existing?.role,
     );
     return AuthResult.ok(_currentUser!);
   }

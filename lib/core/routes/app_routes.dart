@@ -7,7 +7,35 @@ abstract final class AppRoutes {
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
   static const String passwordUpdated = '/password-updated';
+
+  /// Post-auth shell (Home + bottom navigation).
+  /// Kept as [homePlaceholder] for auth screens that already navigate here.
   static const String homePlaceholder = '/home-placeholder';
+  static const String main = '/main';
+
+  static const String search = '/search';
+  static const String categories = '/categories';
+  static const String categoryBrowse = '/category-browse';
+  static const String productList = '/product-list';
+  static const String productDetail = '/product-detail';
+  static const String dealers = '/dealers';
+  static const String brands = '/brands';
+  static const String brandProducts = '/brand-products';
+  static const String offers = '/offers';
+  static const String offerDetail = '/offer-detail';
+  static const String cart = '/cart';
+  static const String quotation = '/quotation';
+  static const String quotationReview = '/quotation-review';
+  static const String wishlist = '/wishlist';
+  static const String profile = '/profile';
+  static const String notifications = '/notifications';
+  static const String materialCalculator = '/material-calculator';
+  static const String unitConverter = '/unit-converter';
+  static const String quantityEstimator = '/quantity-estimator';
+  static const String myRewards = '/my-rewards';
+  static const String adminQuotations = '/admin-quotations';
+  static const String adminQuotationDetail = '/admin-quotation-detail';
+  static const String aiAssistant = '/ai-assistant';
 }
 
 /// Arguments for [AppRoutes.otpVerification].
@@ -19,11 +47,8 @@ class OtpVerificationArgs {
     this.resetIsEmail = false,
   });
 
-  /// Phone or email shown under the subtitle.
   final String contactDisplay;
   final OtpPurpose purpose;
-
-  /// Identifier used after password-reset OTP succeeds.
   final String? resetIdentifier;
   final bool resetIsEmail;
 }
@@ -43,4 +68,48 @@ class ResetPasswordArgs {
 
   final String identifier;
   final bool isEmail;
+}
+
+class CategoryBrowseArgs {
+  const CategoryBrowseArgs({required this.categoryId});
+  final String categoryId;
+}
+
+class ProductListArgs {
+  const ProductListArgs({
+    this.categoryId,
+    this.subCategoryId,
+    this.brandId,
+    this.title,
+  });
+
+  final String? categoryId;
+  final String? subCategoryId;
+  final String? brandId;
+  final String? title;
+}
+
+class ProductDetailArgs {
+  const ProductDetailArgs({
+    required this.productId,
+    this.variantId,
+  });
+
+  final String productId;
+  final String? variantId;
+}
+
+class BrandProductsArgs {
+  const BrandProductsArgs({required this.brandId});
+  final String brandId;
+}
+
+class OfferDetailArgs {
+  const OfferDetailArgs({required this.offerId});
+  final String offerId;
+}
+
+class AdminQuotationDetailArgs {
+  const AdminQuotationDetailArgs({required this.quotationId});
+  final String quotationId;
 }

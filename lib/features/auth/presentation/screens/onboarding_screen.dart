@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../widgets/auth_primary_button.dart';
 import '../widgets/onboarding_illustrations.dart';
 
@@ -56,7 +58,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.space5,
+                          AppSpacing.space3,
+                          AppSpacing.space5,
+                          AppSpacing.space2,
+                        ),
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: !_isLast
@@ -64,45 +71,52 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   onPressed: _goLogin,
                                   child: Text(
                                     'Skip',
-                                    style: theme.textTheme.titleMedium?.copyWith(
+                                    style: theme.textTheme.labelLarge?.copyWith(
                                       color: AppColors.outline,
-                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 )
-                              : const SizedBox(height: 48),
+                              : const SizedBox(height: AppSpacing.space12),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
+                          horizontal: AppSpacing.space6,
+                          vertical: AppSpacing.space4,
                         ),
                         child: OnboardingIllustration(index: _index),
                       ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(32, 24, 32, 20),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.space8,
+                          AppSpacing.space6,
+                          AppSpacing.space8,
+                          AppSpacing.space5,
+                        ),
                         child: Column(
                           children: [
                             Text(
                               slide.headline,
                               textAlign: TextAlign.center,
-                              style: theme.textTheme.headlineSmall
-                                  ?.copyWith(height: 1.25),
+                              style: theme.textTheme.headlineSmall,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: AppSpacing.space3),
                             Text(
                               slide.desc,
                               textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(height: 1.65),
+                              style: theme.textTheme.bodyMedium,
                             ),
                           ],
                         ),
                       ),
                       const Spacer(),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.space6,
+                          0,
+                          AppSpacing.space6,
+                          AppSpacing.space8,
+                        ),
                         child: Column(
                           children: [
                             Row(
@@ -114,21 +128,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 250),
                                     margin: const EdgeInsets.symmetric(
-                                      horizontal: 4,
+                                      horizontal: AppSpacing.space1,
                                     ),
-                                    height: 8,
-                                    width: active ? 28 : 8,
+                                    height: AppSpacing.space2,
+                                    width: active
+                                        ? AppSpacing.space8
+                                        : AppSpacing.space2,
                                     decoration: BoxDecoration(
                                       color: active
                                           ? AppColors.primary
                                           : AppColors.outlineVariant,
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: AppRadius.xsAll,
                                     ),
                                   ),
                                 );
                               }),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: AppSpacing.space5),
                             if (_isLast)
                               AuthPrimaryButton(
                                 label: 'Get Started',
@@ -140,14 +156,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 children: [
                                   if (_index > 0) ...[
                                     SizedBox(
-                                      width: 52,
-                                      height: 52,
+                                      width: AppSpacing.buttonHeight,
+                                      height: AppSpacing.buttonHeight,
                                       child: Material(
                                         color: AppColors.surfaceVariant,
-                                        borderRadius: BorderRadius.circular(14),
+                                        borderRadius: AppRadius.mdAll,
                                         child: InkWell(
-                                          borderRadius:
-                                              BorderRadius.circular(14),
+                                          borderRadius: AppRadius.mdAll,
                                           onTap: () => setState(() => _index--),
                                           child: const Icon(
                                             Icons.arrow_back_rounded,
@@ -156,7 +171,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: AppSpacing.space3),
                                   ],
                                   Expanded(
                                     child: AuthPrimaryButton(

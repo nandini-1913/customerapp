@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/routes/app_routes.dart';
+import '../../../../core/state/session_controller.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../domain/models/auth_models.dart';
 import '../../services/auth_service.dart';
 import '../../services/mock_auth_service.dart';
@@ -108,6 +112,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     if (!mounted) return;
     setState(() => _googleLoading = false);
     if (result.success) {
+      if (result.user != null) {
+        context.read<SessionController>().setFromAuth(result.user!);
+      }
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.homePlaceholder,
         (_) => false,
@@ -130,14 +137,19 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 20, 24, 12),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.space4,
+                      AppSpacing.space5,
+                      AppSpacing.space6,
+                      AppSpacing.space3,
+                    ),
                     child: Row(
                       children: [
                         IconButton(
                           onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.arrow_back_rounded),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: AppSpacing.space1),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,7 +160,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               ),
                               Text(
                                 'Join thousands of construction professionals',
-                                style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
+                                style: theme.textTheme.bodyMedium,
                               ),
                             ],
                           ),
@@ -158,7 +170,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                   ),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.space6,
+                        0,
+                        AppSpacing.space6,
+                        AppSpacing.space8,
+                      ),
                       keyboardDismissBehavior:
                           ScrollViewKeyboardDismissBehavior.onDrag,
                       child: Form(
@@ -173,14 +190,14 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               textInputAction: TextInputAction.next,
                               validator: AuthValidators.fullName,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: AppSpacing.space4),
                             AuthTextField(
                               label: 'Business Name (Optional)',
                               controller: _businessController,
                               prefixIcon: Icons.business_rounded,
                               textInputAction: TextInputAction.next,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: AppSpacing.space4),
                             AuthTextField(
                               label: 'Email Address',
                               controller: _emailController,
@@ -189,7 +206,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               textInputAction: TextInputAction.next,
                               validator: AuthValidators.email,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: AppSpacing.space4),
                             AuthTextField(
                               label: 'Mobile Number',
                               controller: _mobileController,
@@ -198,7 +215,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               textInputAction: TextInputAction.next,
                               validator: AuthValidators.mobile,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: AppSpacing.space4),
                             AuthTextField(
                               label: 'Password',
                               controller: _passwordController,
@@ -208,7 +225,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               textInputAction: TextInputAction.next,
                               validator: AuthValidators.password,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: AppSpacing.space4),
                             AuthTextField(
                               label: 'Confirm Password',
                               controller: _confirmController,
@@ -221,7 +238,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                 _passwordController.text,
                               ),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: AppSpacing.space4),
                             RoleSelector(
                               value: _role,
                               errorText: _roleError,
@@ -232,7 +249,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                 });
                               },
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: AppSpacing.space4),
                             InkWell(
                               onTap: () {
                                 setState(() {
@@ -245,14 +262,16 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                 children: [
                                   AnimatedContainer(
                                     duration: const Duration(milliseconds: 150),
-                                    width: 22,
-                                    height: 22,
-                                    margin: const EdgeInsets.only(top: 1),
+                                    width: AppSpacing.space5,
+                                    height: AppSpacing.space5,
+                                    margin: const EdgeInsets.only(
+                                      top: AppSpacing.space1,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: _acceptedTerms
                                           ? AppColors.primary
                                           : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: AppRadius.smAll,
                                       border: Border.all(
                                         color: _termsError != null
                                             ? AppColors.error
@@ -265,17 +284,16 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                                     child: _acceptedTerms
                                         ? const Icon(
                                             Icons.check_rounded,
-                                            size: 14,
+                                            size: AppSpacing.space4,
                                             color: AppColors.onPrimary,
                                           )
                                         : null,
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: AppSpacing.space3),
                                   Expanded(
                                     child: Text.rich(
                                       TextSpan(
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(fontSize: 13, height: 1.5),
+                                        style: theme.textTheme.bodyMedium,
                                         children: const [
                                           TextSpan(text: 'I accept the '),
                                           TextSpan(
@@ -302,27 +320,30 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                             ),
                             if (_termsError != null)
                               Padding(
-                                padding: const EdgeInsets.only(top: 6, left: 34),
+                                padding: const EdgeInsets.only(
+                                  top: AppSpacing.space2,
+                                  left: AppSpacing.space8,
+                                ),
                                 child: Text(
                                   _termsError!,
                                   style: theme.textTheme.bodySmall
                                       ?.copyWith(color: AppColors.error),
                                 ),
                               ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: AppSpacing.space4),
                             AuthPrimaryButton(
                               label: 'Create Account',
                               icon: Icons.person_add_rounded,
                               loading: _loading,
                               onPressed: _submit,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: AppSpacing.space4),
                             GoogleSignInButton(
                               label: 'Sign up with Google',
                               loading: _googleLoading,
                               onPressed: _google,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: AppSpacing.space4),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [

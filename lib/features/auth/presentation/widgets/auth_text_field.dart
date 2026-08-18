@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 
 class AuthTextField extends StatefulWidget {
   const AuthTextField({
@@ -84,20 +85,21 @@ class _AuthTextFieldState extends State<AuthTextField> {
             ? null
             : Icon(
                 widget.prefixIcon,
-                size: 20,
+                size: AppSpacing.space5,
                 color: _focused ? AppColors.primary : AppColors.onSurfaceVariant,
               ),
         suffixIcon: widget.showVisibilityToggle
             ? IconButton(
                 onPressed: () => setState(() => _obscure = !_obscure),
                 icon: Icon(
-                  _obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded,
-                  size: 20,
+                  _obscure
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+                  size: AppSpacing.space5,
                   color: AppColors.onSurfaceVariant,
                 ),
               )
             : null,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         labelStyle: theme.textTheme.bodyMedium?.copyWith(
           color: _focused ? AppColors.primary : AppColors.onSurfaceVariant,
         ),

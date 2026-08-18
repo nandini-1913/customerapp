@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../services/auth_service.dart';
 import '../../services/mock_auth_service.dart';
 import '../widgets/auth_primary_button.dart';
@@ -76,7 +78,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space6,
+            AppSpacing.space6,
+            AppSpacing.space6,
+            AppSpacing.space10,
+          ),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Form(
             key: _formKey,
@@ -87,30 +94,30 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  icon: const Icon(Icons.arrow_back_rounded, size: 22),
+                  icon: const Icon(Icons.arrow_back_rounded),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: AppSpacing.space8),
                 Container(
-                  width: 72,
-                  height: 72,
+                  width: AppSpacing.space16,
+                  height: AppSpacing.space16,
                   decoration: BoxDecoration(
                     color: AppColors.primaryContainer,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: AppRadius.xlAll,
                   ),
                   child: const Icon(
                     Icons.password_rounded,
-                    size: 36,
+                    size: AppSpacing.space8,
                     color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.space6),
                 Text('Reset Password', style: theme.textTheme.headlineMedium),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 Text(
                   'Create a new password for your Shivani Constructions account.',
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+                  style: theme.textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.space8),
                 AuthTextField(
                   label: 'New Password',
                   controller: _passwordController,
@@ -119,7 +126,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   prefixIcon: Icons.lock_rounded,
                   validator: AuthValidators.password,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.space4),
                 AuthTextField(
                   label: 'Confirm New Password',
                   controller: _confirmController,
@@ -131,7 +138,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     _passwordController.text,
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: AppSpacing.space8),
                 AuthPrimaryButton(
                   label: 'Update Password',
                   icon: Icons.check_circle_rounded,

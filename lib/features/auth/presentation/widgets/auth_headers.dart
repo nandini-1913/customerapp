@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 
 class AuthBrandHeader extends StatelessWidget {
@@ -18,23 +19,25 @@ class AuthBrandHeader extends StatelessWidget {
       children: [
         if (showIcon) ...[
           Container(
-            width: 36,
-            height: 36,
+            width: AppSpacing.space10,
+            height: AppSpacing.space10,
             decoration: BoxDecoration(
               color: AppColors.primaryContainer,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: AppRadius.smAll,
             ),
             child: const Icon(
               Icons.storefront_rounded,
-              size: 20,
+              size: AppSpacing.space5,
               color: AppColors.primary,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.space3),
         ],
         Text(
           AppConstants.appName,
-          style: Theme.of(context).textTheme.titleSmall,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppColors.primary,
+              ),
         ),
       ],
     );
@@ -64,26 +67,30 @@ class AuthPageHeader extends StatelessWidget {
       children: [
         if (onBack != null || leadingIcon != null)
           Padding(
-            padding: const EdgeInsets.only(bottom: 24),
+            padding: const EdgeInsets.only(bottom: AppSpacing.space6),
             child: leadingIcon != null
                 ? Container(
-                    width: 72,
-                    height: 72,
+                    width: AppSpacing.space16,
+                    height: AppSpacing.space16,
                     decoration: BoxDecoration(
                       color: AppColors.primaryContainer,
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+                      borderRadius: AppRadius.xlAll,
                     ),
-                    child: Icon(leadingIcon, size: 36, color: AppColors.primary),
+                    child: Icon(
+                      leadingIcon,
+                      size: AppSpacing.space8,
+                      color: AppColors.primary,
+                    ),
                   )
                 : IconButton(
                     onPressed: onBack,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    icon: const Icon(Icons.arrow_back_rounded, size: 22),
+                    icon: const Icon(Icons.arrow_back_rounded, size: AppSpacing.space6),
                   ),
           ),
         Text(title, style: theme.textTheme.headlineMedium),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.space2),
         Text(subtitle, style: theme.textTheme.bodyMedium),
       ],
     );
@@ -97,7 +104,7 @@ class AuthTopAccentBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return const ColoredBox(
       color: AppColors.primary,
-      child: SizedBox(height: 6, width: double.infinity),
+      child: SizedBox(height: AppSpacing.space2, width: double.infinity),
     );
   }
 }
@@ -111,12 +118,11 @@ class AuthOrDivider extends StatelessWidget {
       children: [
         const Expanded(child: Divider(color: AppColors.divider, height: 1)),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3),
           child: Text(
             'OR',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: AppColors.outline,
-                  fontWeight: FontWeight.w500,
                 ),
           ),
         ),

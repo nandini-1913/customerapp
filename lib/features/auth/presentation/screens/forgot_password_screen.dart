@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_elevation.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../services/auth_service.dart';
 import '../../services/mock_auth_service.dart';
@@ -84,7 +86,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space6,
+            AppSpacing.space6,
+            AppSpacing.space6,
+            AppSpacing.space10,
+          ),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Form(
             key: _formKey,
@@ -93,7 +100,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               children: [
                 TextButton.icon(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back_rounded, size: 22),
+                  icon: const Icon(Icons.arrow_back_rounded),
                   label: Text(
                     'Back to Login',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -106,33 +113,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     padding: EdgeInsets.zero,
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: AppSpacing.space8),
                 Container(
-                  width: 72,
-                  height: 72,
+                  width: AppSpacing.space16,
+                  height: AppSpacing.space16,
                   decoration: BoxDecoration(
                     color: AppColors.primaryContainer,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: AppRadius.xlAll,
                   ),
                   child: const Icon(
                     Icons.lock_reset_rounded,
-                    size: 36,
+                    size: AppSpacing.space8,
                     color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.space6),
                 Text('Forgot Password?', style: theme.textTheme.headlineMedium),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.space2),
                 Text(
                   "Enter your registered email address or mobile number. We'll send you a verification code.",
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+                  style: theme.textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: AppSpacing.space8),
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(AppSpacing.space1),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceContainer,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    borderRadius: AppRadius.mdAll,
                   ),
                   child: Row(
                     children: [
@@ -149,7 +156,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.space5),
                 if (_isEmail)
                   AuthTextField(
                     label: 'Registered Email Address',
@@ -166,19 +173,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     prefixIcon: Icons.phone_rounded,
                     validator: AuthValidators.mobile,
                   ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.space6),
                 AuthPrimaryButton(
                   label: 'Send Reset Code',
                   icon: Icons.send_rounded,
                   loading: _loading,
                   onPressed: _submit,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.space5),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space4,
+                    vertical: AppSpacing.space3,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.infoContainer,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    borderRadius: AppRadius.mdAll,
                     border: Border.all(
                       color: AppColors.info.withValues(alpha: 0.12),
                     ),
@@ -186,12 +196,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_rounded, size: 18, color: AppColors.info),
-                      const SizedBox(width: 10),
+                      const Icon(
+                        Icons.info_rounded,
+                        size: AppSpacing.space5,
+                        color: AppColors.info,
+                      ),
+                      const SizedBox(width: AppSpacing.space3),
                       Expanded(
                         child: Text(
                           'Check your inbox or messages folder. The code expires in 10 minutes.',
-                          style: theme.textTheme.bodySmall?.copyWith(height: 1.5),
+                          style: theme.textTheme.bodySmall,
                         ),
                       ),
                     ],
@@ -222,19 +236,18 @@ class _TabChip extends StatelessWidget {
     return Expanded(
       child: Material(
         color: selected ? AppColors.surface : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        elevation: selected ? 1 : 0,
+        borderRadius: AppRadius.mdAll,
+        elevation: selected ? AppElevation.level1 : AppElevation.level0,
         shadowColor: AppColors.shadow,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: AppRadius.mdAll,
           child: SizedBox(
-            height: 40,
+            height: AppSpacing.space10,
             child: Center(
               child: Text(
                 label,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontSize: 13,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                       color: selected
                           ? AppColors.primary

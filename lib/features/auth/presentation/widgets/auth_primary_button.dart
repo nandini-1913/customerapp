@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_elevation.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 
 class AuthPrimaryButton extends StatelessWidget {
@@ -29,18 +31,18 @@ class AuthPrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isEnabled ? onPressed : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isEnabled ? AppColors.primary : AppColors.disabledContainer,
-          foregroundColor: isEnabled ? AppColors.onPrimary : AppColors.disabled,
-          elevation: isEnabled ? 2 : 0,
+          backgroundColor:
+              isEnabled ? AppColors.primary : AppColors.disabledContainer,
+          foregroundColor:
+              isEnabled ? AppColors.onPrimary : AppColors.disabled,
+          elevation: isEnabled ? AppElevation.level1 : AppElevation.level0,
           shadowColor: AppColors.shadow,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
         ),
         child: loading
             ? const SizedBox(
-                width: 22,
-                height: 22,
+                width: AppSpacing.space5,
+                height: AppSpacing.space5,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.4,
                   color: AppColors.onPrimary,
@@ -50,8 +52,8 @@ class AuthPrimaryButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 20),
-                    const SizedBox(width: 8),
+                    Icon(icon, size: AppSpacing.space5),
+                    const SizedBox(width: AppSpacing.space2),
                   ],
                   Text(label),
                 ],

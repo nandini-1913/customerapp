@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 
 /// Temporary authenticated destination until the dashboard is implemented.
@@ -17,40 +18,40 @@ class AuthHomePlaceholderScreen extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xxl),
+          padding: const EdgeInsets.all(AppSpacing.space8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.space6),
               Container(
-                width: 72,
-                height: 72,
+                width: AppSpacing.space16,
+                height: AppSpacing.space16,
                 decoration: BoxDecoration(
                   color: AppColors.primaryContainer,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppRadius.xlAll,
                 ),
                 child: const Icon(
                   Icons.verified_user_rounded,
-                  size: 36,
+                  size: AppSpacing.space8,
                   color: AppColors.primary,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.space6),
               Text(
                 'You are signed in',
                 style: theme.textTheme.headlineMedium,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.space2),
               Text(
                 'Authentication succeeded. The home dashboard will replace this placeholder in a later step.',
-                style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
+                style: theme.textTheme.bodyMedium,
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: AppSpacing.space8),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.space4),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                  borderRadius: AppRadius.lgAll,
                   border: Border.all(color: AppColors.outlineVariant),
                 ),
                 child: Column(
@@ -60,7 +61,7 @@ class AuthHomePlaceholderScreen extends StatelessWidget {
                       AppConstants.appName,
                       style: theme.textTheme.titleSmall,
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.space2),
                     Text(
                       'Route: ${AppRoutes.homePlaceholder}',
                       style: theme.textTheme.bodySmall,

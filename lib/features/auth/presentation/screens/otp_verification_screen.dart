@@ -1,10 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../../core/state/session_controller.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../services/auth_service.dart';
 import '../../services/mock_auth_service.dart';
 import '../widgets/auth_otp_fields.dart';
@@ -98,6 +103,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         return;
       case OtpPurpose.registration:
       case OtpPurpose.mobileLogin:
+        if (result.user != null) {
+          context.read<SessionController>().setFromAuth(result.user!);
+        }
         Navigator.of(context).pushNamedAndRemoveUntil(
           AppRoutes.homePlaceholder,
           (_) => false,
@@ -225,7 +233,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.space6,
+            AppSpacing.space6,
+            AppSpacing.space6,
+            AppSpacing.space10,
+          ),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,30 +247,30 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 onPressed: () => Navigator.of(context).pop(),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                icon: const Icon(Icons.arrow_back_rounded, size: 22),
+                icon: const Icon(Icons.arrow_back_rounded),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: AppSpacing.space8),
               Container(
-                width: 72,
-                height: 72,
+                width: AppSpacing.space16,
+                height: AppSpacing.space16,
                 decoration: BoxDecoration(
                   color: AppColors.primaryContainer,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppRadius.xlAll,
                 ),
                 child: Icon(
                   _isEmailReset ? Icons.mark_email_read_rounded : Icons.phone_android_rounded,
-                  size: 36,
+                  size: AppSpacing.space8,
                   color: AppColors.primary,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.space6),
               Text(title, style: theme.textTheme.headlineMedium),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.space2),
               Text(
                 'Enter the 6-digit verification code sent to',
                 style: theme.textTheme.bodyMedium,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.space2),
               Text(
                 _contact,
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -265,9 +278,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   color: AppColors.onSurface,
                 ),
               ),
-              const SizedBox(height: 36),
+              const SizedBox(height: AppSpacing.space8),
               SizedBox(
-                height: 60,
+                height: AppSpacing.otpBoxHeight,
                 child: AuthOtpFields(
                   key: _otpKey,
                   hasError: _error != null,
@@ -279,11 +292,15 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 ),
               ),
               if (_error != null) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.space3),
                 Row(
                   children: [
-                    const Icon(Icons.error_rounded, size: 16, color: AppColors.error),
-                    const SizedBox(width: 6),
+                    const Icon(
+                      Icons.error_rounded,
+                      size: AppSpacing.space4,
+                      color: AppColors.error,
+                    ),
+                    const SizedBox(width: AppSpacing.space2),
                     Expanded(
                       child: Text(
                         _error!,
@@ -294,21 +311,19 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   ],
                 ),
               ],
-              const SizedBox(height: 28),
+              const SizedBox(height: AppSpacing.space8),
               Center(
                 child: _seconds > 0
                     ? Text.rich(
                         TextSpan(
-                          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
+                          style: theme.textTheme.bodyMedium,
                           children: [
                             const TextSpan(text: 'Resend code in '),
                             TextSpan(
                               text: '0:${_seconds.toString().padLeft(2, '0')}',
-                              style: theme.textTheme.labelSmall?.copyWith(
+                              style: AppTypography.labelSmallMono(
                                 color: AppColors.primary,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                              ),
+                              ).copyWith(fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -318,7 +333,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         child: const Text('Resend Code'),
                       ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: AppSpacing.space8),
               AuthPrimaryButton(
                 label: _loading ? 'Verifying…' : 'Verify',
                 icon: Icons.verified_rounded,
@@ -326,14 +341,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 enabled: _otp.length == AppConstants.otpLength,
                 onPressed: _verify,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.space5),
               Center(
                 child: TextButton.icon(
                   onPressed: _editContact,
-                  icon: const Icon(Icons.edit_rounded, size: 16),
+                  icon: const Icon(Icons.edit_rounded, size: AppSpacing.space4),
                   label: Text(
                     editLabel,
-                    style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
+                    style: theme.textTheme.bodyMedium,
                   ),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.onSurfaceVariant,
