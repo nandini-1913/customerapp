@@ -26,7 +26,7 @@ class CategoriesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HomeSectionHeader(title: 'Categories', onViewAll: onViewAll),
+        HomeSectionHeader(title: 'Shop by Category', onViewAll: onViewAll),
         const SizedBox(height: AppSpacing.space3),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -72,30 +72,30 @@ class HomeCategoryCard extends StatelessWidget {
       elevation: AppElevation.level1,
       shadowColor: AppColors.shadow,
       borderRadius: AppRadius.lgAll,
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadius.lgAll,
         child: Container(
-          padding: const EdgeInsets.all(AppSpacing.space3),
           decoration: BoxDecoration(
             borderRadius: AppRadius.lgAll,
             border: Border.all(color: AppColors.divider),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               CategoryImage(
                 imageAsset: category.imageAsset,
                 fallbackIcon: category.icon,
                 fallbackIconColor: Color(category.iconColor),
                 fallbackBackground: Color(category.iconBackground),
-                width: AppSpacing.space12,
-                height: AppSpacing.space12,
-                borderRadius: AppRadius.mdAll,
+                height: 88,
+                width: double.infinity,
                 fit: BoxFit.cover,
-                iconSize: AppSpacing.space5,
+                iconSize: AppSpacing.space6,
               ),
-              const SizedBox(width: AppSpacing.space3),
-              Expanded(
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.space3),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -105,12 +105,12 @@ class HomeCategoryCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: AppColors.onSurface,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.space1),
                     Text(
-                      '${category.itemCount} items',
+                      '${category.itemCount} products',
                       style: AppTypography.caption(color: AppColors.outline),
                     ),
                   ],

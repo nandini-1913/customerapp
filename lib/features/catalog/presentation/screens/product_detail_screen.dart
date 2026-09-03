@@ -31,6 +31,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _qty = 1;
   String? _selectedVariantId;
   bool _recorded = false;
+  String? _systemSizeFilter;
 
   @override
   void initState() {
@@ -58,6 +59,87 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     });
   }
 
+  Future<void> _openSystemFilter(CatalogProduct product) async {
+    final sizes = CatalogMockData.sizeOptionsForCategory(product.categoryId);
+    if (sizes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No size filters available for this category'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final selected = await showModalBottomSheet<String?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (context) {
+        final maxHeight = MediaQuery.of(context).size.height * 0.55;
+        return SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.space4,
+                    AppSpacing.space4,
+                    AppSpacing.space4,
+                    AppSpacing.space2,
+                  ),
+                  child: Text(
+                    'Filter System (Size)',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                const Divider(height: 1),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      ListTile(
+                        title: const Text('All sizes'),
+                        trailing: _systemSizeFilter == null
+                            ? const Icon(
+                                Icons.check_rounded,
+                                color: AppColors.primary,
+                              )
+                            : null,
+                        onTap: () => Navigator.pop(context, ''),
+                      ),
+                      for (final size in sizes)
+                        ListTile(
+                          title: Text(size),
+                          trailing: _systemSizeFilter == size
+                              ? const Icon(
+                                  Icons.check_rounded,
+                                  color: AppColors.primary,
+                                )
+                              : null,
+                          onTap: () => Navigator.pop(context, size),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || selected == null) return;
+    setState(() {
+      _systemSizeFilter = selected.isEmpty ? null : selected;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final product = CatalogMockData.productById(widget.productId);
@@ -74,6 +156,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     final theme = Theme.of(context);
     final wishlist = context.watch<WishlistController>();
     final cart = context.watch<CartController>();
+    final compatible = CatalogMockData.compatibleProductsFor(
+      product,
+      sizeFilter: _systemSizeFilter,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -128,6 +214,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             '${product.subCategoryName} · SKU ${product.sku}',
             style: theme.textTheme.bodySmall?.copyWith(color: AppColors.outline),
           ),
+          if (product.specSummary.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.space2),
+            Text(product.specSummary, style: theme.textTheme.bodyMedium),
+          ],
           const SizedBox(height: AppSpacing.space4),
           Text('Select brand', style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.space2),
@@ -322,8 +412,149 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ],
             ),
           ],
+          const SizedBox(height: AppSpacing.space6),
+          Row(
+            children: [
+              Expanded(
+                child: Text('Complete System', style: theme.textTheme.titleMedium),
+              ),
+              TextButton.icon(
+                onPressed: () => _openSystemFilter(product),
+                icon: const Icon(Icons.tune_rounded, size: 18),
+                label: Text(
+                  _systemSizeFilter == null
+                      ? 'Filter System'
+                      : _systemSizeFilter!,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            'Compatible products for building a complete system. The main product above stays unchanged.',
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.outline),
+          ),
+          const SizedBox(height: AppSpacing.space3),
+          if (compatible.isEmpty)
+            Text(
+              'No compatible products found for this filter.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.outline,
+              ),
+            )
+          else
+            ...compatible.take(12).map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.space2),
+                    child: _CompatibleProductTile(
+                      product: item,
+                      onOpen: () {
+                        Navigator.of(context).pushNamed(
+                          AppRoutes.productDetail,
+                          arguments: ProductDetailArgs(productId: item.id),
+                        );
+                      },
+                    ),
+                  ),
+                ),
           const SizedBox(height: AppSpacing.space8),
         ],
+      ),
+    );
+  }
+}
+
+class _CompatibleProductTile extends StatelessWidget {
+  const _CompatibleProductTile({
+    required this.product,
+    required this.onOpen,
+  });
+
+  final CatalogProduct product;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final from = CatalogMockData.cheapestVariantFor(product.id);
+    final brandName = from?.brandName ?? product.subCategoryName;
+
+    return Material(
+      color: AppColors.surface,
+      borderRadius: AppRadius.lgAll,
+      child: InkWell(
+        borderRadius: AppRadius.lgAll,
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space3),
+          child: Row(
+            children: [
+              CategoryImage(
+                imageAsset: product.imageAsset,
+                fallbackIcon: product.icon,
+                fallbackIconColor: AppColors.primary,
+                fallbackBackground: AppColors.surfaceContainer,
+                width: AppSpacing.space12,
+                height: AppSpacing.space12,
+                borderRadius: AppRadius.mdAll,
+                fit: BoxFit.cover,
+              ),
+              const SizedBox(width: AppSpacing.space3),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      brandName,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    Text(
+                      product.specifications['Size'] ?? product.specSummary,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    Text(
+                      from?.priceWithUnit ?? product.priceWithUnit,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              OutlinedButton(
+                onPressed: () async {
+                  final variant =
+                      await showBrandPicker(context, product: product);
+                  if (variant == null || !context.mounted) return;
+                  if (!variant.inStock) return;
+                  context.read<CartController>().addVariant(variant);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${variant.displayName} added to cart'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  minimumSize: const Size(0, AppSpacing.space8),
+                ),
+                child: const Text('Add'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -38,7 +38,7 @@ class FeaturedProductsSection extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.space3),
         SizedBox(
-          height: 392,
+          height: 348,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
@@ -72,12 +72,14 @@ class FeaturedProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final brandCount = CatalogMockData.variantsByProduct(product.id).length;
     final from = CatalogMockData.cheapestVariantFor(product.id);
+    final brandName = from?.brandName ?? product.categoryName;
+    final rating = from?.rating;
+    final inStock = from?.inStock ?? true;
 
     return SizedBox(
-      width: 196,
-      height: 392,
+      width: 176,
+      height: 348,
       child: Material(
         color: AppColors.surface,
         elevation: AppElevation.level1,
@@ -92,45 +94,15 @@ class FeaturedProductCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: 120,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CategoryImage(
-                      imageAsset: product.imageAsset,
-                      fallbackIcon: product.icon,
-                      fallbackIconColor: AppColors.primary,
-                      fallbackBackground: AppColors.surfaceContainer,
-                      width: double.infinity,
-                      height: 120,
-                      fit: BoxFit.cover,
-                      iconSize: AppSpacing.space10,
-                    ),
-                    Positioned(
-                      left: AppSpacing.space2,
-                      bottom: AppSpacing.space2,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.space2,
-                          vertical: AppSpacing.space1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: AppRadius.smAll,
-                        ),
-                        child: Text(
-                          product.categoryName.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.labelSmallMono(
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              CategoryImage(
+                imageAsset: product.imageAsset,
+                fallbackIcon: product.icon,
+                fallbackIconColor: AppColors.primary,
+                fallbackBackground: AppColors.surfaceContainer,
+                width: double.infinity,
+                height: 112,
+                fit: BoxFit.cover,
+                iconSize: AppSpacing.space8,
               ),
               Expanded(
                 child: Padding(
@@ -138,6 +110,15 @@ class FeaturedProductCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        brandName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       Text(
                         product.name,
                         maxLines: 2,
@@ -152,16 +133,30 @@ class FeaturedProductCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: AppTypography.caption(color: AppColors.outline),
                       ),
-                      const SizedBox(height: AppSpacing.space1),
-                      Text(
-                        '$brandCount brands',
-                        style: AppTypography.caption(color: AppColors.outline),
-                      ),
+                      if (rating != null) ...[
+                        const SizedBox(height: AppSpacing.space1),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 14,
+                              color: AppColors.secondary,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              rating.toStringAsFixed(1),
+                              style: AppTypography.caption(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.space1),
                       Text(
                         from == null
                             ? product.priceWithUnit
-                            : 'From ${from.priceLabel}',
+                            : '${from.priceLabel} / ${product.unit}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleSmall?.copyWith(
@@ -169,10 +164,8 @@ class FeaturedProductCard extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      Text(
-                        '/ ${product.unit}',
-                        style: AppTypography.caption(color: AppColors.outline),
-                      ),
+                      const SizedBox(height: AppSpacing.space1),
+                      StockStatusChip(inStock: inStock),
                       const Spacer(),
                       ProductActionBar(product: product, compact: true),
                     ],

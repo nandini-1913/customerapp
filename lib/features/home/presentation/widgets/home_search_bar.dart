@@ -24,22 +24,23 @@ class HomeSearchBar extends StatelessWidget {
 
     return Material(
       color: AppColors.surface,
-      elevation: AppElevation.level1,
+      elevation: AppElevation.level2,
       shadowColor: AppColors.shadow,
-      borderRadius: AppRadius.pillAll,
+      borderRadius: AppRadius.lgAll,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.pillAll,
+        borderRadius: AppRadius.lgAll,
         child: Container(
-          height: AppSpacing.space12,
+          height: AppSpacing.space14,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
           decoration: BoxDecoration(
-            borderRadius: AppRadius.pillAll,
-            border: Border.all(color: AppColors.outlineVariant),
+            borderRadius: AppRadius.lgAll,
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+            color: AppColors.surface,
           ),
           child: Row(
             children: [
-              Icon(appIcon('search'), color: AppColors.onSurfaceVariant),
+              Icon(appIcon('search'), color: AppColors.primary),
               const SizedBox(width: AppSpacing.space3),
               Expanded(
                 child: Text(
@@ -68,7 +69,10 @@ class HomeSearchBar extends StatelessWidget {
                   minWidth: AppSpacing.space8,
                   minHeight: AppSpacing.space8,
                 ),
-                icon: Icon(appIcon('qr_code_scanner'), color: AppColors.onSurfaceVariant),
+                icon: Icon(
+                  appIcon('qr_code_scanner'),
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
             ],
           ),

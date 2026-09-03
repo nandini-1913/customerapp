@@ -24,17 +24,18 @@ class PopularProductsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final visible = products.take(6).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         HomeSectionHeader(title: 'Popular Products', onViewAll: onViewAll),
         const SizedBox(height: AppSpacing.space3),
-        for (var i = 0; i < products.length; i++) ...[
+        for (var i = 0; i < visible.length; i++) ...[
           if (i > 0) const SizedBox(height: AppSpacing.space3),
           ProductListCard(
-            product: products[i],
-            onTap: () => onProductTap?.call(products[i]),
+            product: visible[i],
+            onTap: () => onProductTap?.call(visible[i]),
           ),
         ],
       ],
@@ -55,8 +56,9 @@ class ProductListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final brandCount = CatalogMockData.variantsByProduct(product.id).length;
     final from = CatalogMockData.cheapestVariantFor(product.id);
+    final brandName = from?.brandName ?? product.categoryName;
+    final inStock = from?.inStock ?? true;
 
     return Material(
       color: AppColors.surface,
@@ -83,8 +85,8 @@ class ProductListCard extends StatelessWidget {
                     fallbackIcon: product.icon,
                     fallbackIconColor: AppColors.primary,
                     fallbackBackground: AppColors.surfaceContainer,
-                    width: AppSpacing.space12,
-                    height: AppSpacing.space12,
+                    width: AppSpacing.space14,
+                    height: AppSpacing.space14,
                     borderRadius: AppRadius.mdAll,
                     fit: BoxFit.cover,
                     iconSize: AppSpacing.space6,
@@ -95,7 +97,7 @@ class ProductListCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          product.categoryName,
+                          brandName,
                           style: theme.textTheme.labelMedium?.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w700,
@@ -103,15 +105,9 @@ class ProductListCard extends StatelessWidget {
                         ),
                         Text(
                           product.name,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall,
-                        ),
-                        Text(
-                          '${product.subCategoryName} · $brandCount brands',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall,
                         ),
                         Text(
                           product.specSummary,
@@ -123,12 +119,14 @@ class ProductListCard extends StatelessWidget {
                         Text(
                           from == null
                               ? product.priceWithUnit
-                              : 'From ${from.priceWithUnit}',
+                              : '${from.priceLabel} / ${product.unit}',
                           style: theme.textTheme.titleSmall?.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
+                        const SizedBox(height: AppSpacing.space1),
+                        StockStatusChip(inStock: inStock),
                       ],
                     ),
                   ),

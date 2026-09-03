@@ -220,6 +220,14 @@ class ProductVariant {
   String get name => productName;
 }
 
+enum ProductSort {
+  popularity,
+  priceLowHigh,
+  priceHighLow,
+  newest,
+  brandAz,
+}
+
 class CartItem {
   const CartItem({
     required this.variant,

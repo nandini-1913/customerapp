@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../shared/widgets/catalog_filter_sheet.dart';
 import '../../../../shared/widgets/catalog_widgets.dart';
 import '../../../../shared/widgets/category_image.dart';
 import '../../data/mock/catalog_mock_data.dart';
 import '../../domain/models/catalog_models.dart';
 
-class ProductListScreen extends StatelessWidget {
+class ProductListScreen extends StatefulWidget {
   const ProductListScreen({
     super.key,
     this.categoryId,
@@ -23,17 +25,70 @@ class ProductListScreen extends StatelessWidget {
   final String? title;
 
   @override
+  State<ProductListScreen> createState() => _ProductListScreenState();
+}
+
+class _ProductListScreenState extends State<ProductListScreen> {
+  late CatalogFilterState _filter;
+
+  @override
+  void initState() {
+    super.initState();
+    _filter = CatalogFilterState(subCategoryId: widget.subCategoryId);
+  }
+
+  List<CatalogProduct> _baseProducts() {
+    if (widget.subCategoryId != null) {
+      return CatalogMockData.productsBySubCategory(widget.subCategoryId!);
+    }
+    if (widget.categoryId != null) {
+      return CatalogMockData.productsByCategory(widget.categoryId!);
+    }
+    if (widget.title == 'Featured Products') {
+      return CatalogMockData.featuredProducts;
+    }
+    if (widget.title == 'Popular Products') {
+      return CatalogMockData.popularProducts;
+    }
+    if (widget.title == 'Recently Viewed') {
+      return const [];
+    }
+    return CatalogMockData.products;
+  }
+
+  Future<void> _openFilters() async {
+    final categoryId = widget.categoryId ??
+        (widget.subCategoryId != null
+            ? CatalogMockData.subCategoryById(widget.subCategoryId!)?.categoryId
+            : null);
+    final result = await showCatalogFilterSheet(
+      context: context,
+      initial: _filter,
+      categoryId: categoryId,
+      subCategories: categoryId == null
+          ? const []
+          : CatalogMockData.subCategoriesFor(categoryId),
+      brands: categoryId == null
+          ? CatalogMockData.brands
+          : CatalogMockData.brandsForCategory(categoryId),
+    );
+    if (result != null && mounted) {
+      setState(() => _filter = result);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     // Brand pages show brand-specific variants; others show base products.
-    if (brandId != null) {
-      final variants = CatalogMockData.variantsByBrand(brandId!);
+    if (widget.brandId != null) {
+      final variants = CatalogMockData.variantsByBrand(widget.brandId!);
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.surface,
-          title: Text(title ?? 'Brand products'),
+          title: Text(widget.title ?? 'Brand products'),
         ),
         body: variants.isEmpty
             ? const Center(child: Text('No products found'))
@@ -50,45 +105,66 @@ class ProductListScreen extends StatelessWidget {
       );
     }
 
-    List<CatalogProduct> products;
-    if (subCategoryId != null) {
-      products = CatalogMockData.productsBySubCategory(subCategoryId!);
-    } else if (categoryId != null) {
-      products = CatalogMockData.productsByCategory(categoryId!);
-    } else if (title == 'Featured Products') {
-      products = CatalogMockData.featuredProducts;
-    } else if (title == 'Popular Products') {
-      products = CatalogMockData.popularProducts;
-    } else if (title == 'Recently Viewed') {
-      products = const [];
-    } else {
-      products = CatalogMockData.products;
-    }
+    final products = CatalogMockData.filterProducts(
+      source: _baseProducts(),
+      subCategoryId: _filter.subCategoryId,
+      brandId: _filter.brandId,
+      size: _filter.size,
+      material: _filter.material,
+      sort: _filter.sort,
+    );
+
+    final showFilter = widget.brandId == null;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
-        title: Text(title ?? 'Products'),
+        title: Text(widget.title ?? 'Products'),
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.search),
+            icon: const Icon(Icons.search_rounded),
+          ),
+          IconButton(
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.cart),
+            icon: const Icon(Icons.shopping_cart_outlined),
+          ),
+        ],
       ),
+      floatingActionButton: showFilter
+          ? FloatingActionButton.extended(
+              onPressed: _openFilters,
+              icon: const Icon(Icons.tune_rounded),
+              label: Text(
+                _filter.hasActiveFilters ? 'Filter · On' : 'Filter / Sort',
+              ),
+            )
+          : null,
       body: products.isEmpty
           ? const Center(child: Text('No products found'))
           : ListView.separated(
-              padding: const EdgeInsets.all(AppSpacing.space4),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.space4,
+                AppSpacing.space4,
+                AppSpacing.space4,
+                AppSpacing.space16,
+              ),
               itemCount: products.length,
               separatorBuilder: (_, _) =>
                   const SizedBox(height: AppSpacing.space3),
               itemBuilder: (context, index) {
                 final product = products[index];
-                final variants =
-                    CatalogMockData.variantsByProduct(product.id);
+                final variants = CatalogMockData.variantsByProduct(product.id);
                 final from = CatalogMockData.cheapestVariantFor(product.id);
+                final brandName = from?.brandName ?? product.subCategoryName;
+                final inStock = from?.inStock ?? true;
 
                 return Material(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: AppRadius.lgAll,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: AppRadius.lgAll,
                     onTap: () {
                       Navigator.of(context).pushNamed(
                         AppRoutes.productDetail,
@@ -110,7 +186,7 @@ class ProductListScreen extends StatelessWidget {
                                 fallbackBackground: AppColors.surfaceContainer,
                                 width: AppSpacing.space12,
                                 height: AppSpacing.space12,
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: AppRadius.mdAll,
                                 fit: BoxFit.cover,
                               ),
                               const SizedBox(width: AppSpacing.space3),
@@ -119,7 +195,7 @@ class ProductListScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      product.subCategoryName,
+                                      brandName,
                                       style: theme.textTheme.labelMedium
                                           ?.copyWith(
                                         color: AppColors.primary,
@@ -151,6 +227,8 @@ class ProductListScreen extends StatelessWidget {
                                         fontWeight: FontWeight.w800,
                                       ),
                                     ),
+                                    const SizedBox(height: AppSpacing.space1),
+                                    StockStatusChip(inStock: inStock),
                                   ],
                                 ),
                               ),
@@ -179,9 +257,9 @@ class _VariantTile extends StatelessWidget {
     final theme = Theme.of(context);
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: AppRadius.lgAll,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.lgAll,
         onTap: () {
           Navigator.of(context).pushNamed(
             AppRoutes.productDetail,
@@ -206,7 +284,7 @@ class _VariantTile extends StatelessWidget {
                     fallbackBackground: AppColors.surfaceContainer,
                     width: AppSpacing.space12,
                     height: AppSpacing.space12,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: AppRadius.mdAll,
                     fit: BoxFit.cover,
                   ),
                   const SizedBox(width: AppSpacing.space3),
@@ -221,8 +299,14 @@ class _VariantTile extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        Text(variant.productName, style: theme.textTheme.titleSmall),
-                        Text(variant.specSummary, style: theme.textTheme.bodySmall),
+                        Text(
+                          variant.productName,
+                          style: theme.textTheme.titleSmall,
+                        ),
+                        Text(
+                          variant.specSummary,
+                          style: theme.textTheme.bodySmall,
+                        ),
                         const SizedBox(height: AppSpacing.space2),
                         Row(
                           children: [

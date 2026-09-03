@@ -116,10 +116,12 @@ class ProductActionBar extends StatelessWidget {
     super.key,
     required this.product,
     this.compact = false,
+    this.showQuote = true,
   });
 
   final CatalogProduct product;
   final bool compact;
+  final bool showQuote;
 
   Future<void> _addToCart(BuildContext context) async {
     final variant = await showBrandPicker(context, product: product);
@@ -192,17 +194,19 @@ class ProductActionBar extends StatelessWidget {
               child: const Text('Add to Cart'),
             ),
           ),
-          const SizedBox(width: AppSpacing.space1),
-          IconButton.filled(
-            tooltip: 'Get Quote',
-            onPressed: () => _getQuote(context),
-            style: IconButton.styleFrom(
-              minimumSize: const Size(AppSpacing.space8, AppSpacing.space8),
-              maximumSize: const Size(AppSpacing.space8, AppSpacing.space8),
-              padding: EdgeInsets.zero,
+          if (showQuote) ...[
+            const SizedBox(width: AppSpacing.space1),
+            IconButton.filled(
+              tooltip: 'Get Quote',
+              onPressed: () => _getQuote(context),
+              style: IconButton.styleFrom(
+                minimumSize: const Size(AppSpacing.space8, AppSpacing.space8),
+                maximumSize: const Size(AppSpacing.space8, AppSpacing.space8),
+                padding: EdgeInsets.zero,
+              ),
+              icon: const Icon(Icons.request_quote_rounded, size: 18),
             ),
-            icon: const Icon(Icons.request_quote_rounded, size: 18),
-          ),
+          ],
         ],
       );
     }
@@ -232,16 +236,17 @@ class ProductActionBar extends StatelessWidget {
           ),
           child: const Text('Add to Cart'),
         ),
-        FilledButton(
-          onPressed: () => _getQuote(context),
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(0, AppSpacing.space10),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3),
-            visualDensity: VisualDensity.compact,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        if (showQuote)
+          FilledButton(
+            onPressed: () => _getQuote(context),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, AppSpacing.space10),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space3),
+              visualDensity: VisualDensity.compact,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Get Quote'),
           ),
-          child: const Text('Get Quote'),
-        ),
       ],
     );
   }

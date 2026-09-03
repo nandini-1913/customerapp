@@ -5,19 +5,40 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_elevation.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../shared/widgets/app_icons.dart';
+import '../../../../shared/widgets/catalog_filter_sheet.dart';
+import '../../../../shared/widgets/catalog_widgets.dart';
 import '../../../../shared/widgets/category_image.dart';
 import '../../data/mock/catalog_mock_data.dart';
 import '../../domain/models/catalog_models.dart';
 
-class CategoryBrowseScreen extends StatelessWidget {
+class CategoryBrowseScreen extends StatefulWidget {
   const CategoryBrowseScreen({super.key, required this.categoryId});
 
   final String categoryId;
 
   @override
+  State<CategoryBrowseScreen> createState() => _CategoryBrowseScreenState();
+}
+
+class _CategoryBrowseScreenState extends State<CategoryBrowseScreen> {
+  CatalogFilterState _filter = const CatalogFilterState();
+
+  Future<void> _openFilters(Category category) async {
+    final result = await showCatalogFilterSheet(
+      context: context,
+      initial: _filter,
+      categoryId: category.id,
+      subCategories: CatalogMockData.subCategoriesFor(category.id),
+      brands: CatalogMockData.brandsForCategory(category.id),
+    );
+    if (result != null && mounted) {
+      setState(() => _filter = result);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final category = CatalogMockData.categoryById(categoryId);
+    final category = CatalogMockData.categoryById(widget.categoryId);
     if (category == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Category')),
@@ -25,106 +46,229 @@ class CategoryBrowseScreen extends StatelessWidget {
       );
     }
 
-    final subs = CatalogMockData.subCategoriesFor(categoryId);
-    final products = CatalogMockData.productsByCategory(categoryId);
     final theme = Theme.of(context);
+    final source = CatalogMockData.productsByCategory(category.id);
+    final products = CatalogMockData.filterProducts(
+      source: source,
+      subCategoryId: _filter.subCategoryId,
+      brandId: _filter.brandId,
+      size: _filter.size,
+      material: _filter.material,
+      sort: _filter.sort,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         title: Text(category.name),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.space4),
-        children: [
-          if (category.imageAsset.isNotEmpty) ...[
-            CategoryImage(
-              imageAsset: category.imageAsset,
-              fallbackIcon: category.icon,
-              fallbackIconColor: Color(category.iconColor),
-              fallbackBackground: Color(category.iconBackground),
-              height: 160,
-              borderRadius: AppRadius.lgAll,
-              fit: BoxFit.cover,
-              iconSize: AppSpacing.space8,
-            ),
-            const SizedBox(height: AppSpacing.space4),
-          ],
-          Text(
-            category.description.isEmpty
-                ? 'Browse ${category.name.toLowerCase()} products'
-                : category.description,
-            style: theme.textTheme.bodyMedium,
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.search),
+            icon: const Icon(Icons.search_rounded),
           ),
-          if (subs.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.space5),
-            Text('Subcategories', style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.space3),
-            ...subs.map(
-              (sub) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.space2),
-                child: Material(
-                  color: AppColors.surface,
-                  elevation: AppElevation.level1,
-                  shadowColor: AppColors.shadow,
-                  borderRadius: AppRadius.lgAll,
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
-                    leading: Icon(appIcon(category.icon), color: AppColors.primary),
-                    title: Text(sub.name),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () {
-                      Navigator.of(context).pushNamed(
-                        AppRoutes.productList,
-                        arguments: ProductListArgs(
-                          categoryId: categoryId,
-                          subCategoryId: sub.id,
-                          title: sub.name,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.space5),
-          Row(
-            children: [
-              Expanded(
-                child: Text('Products', style: theme.textTheme.titleMedium),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed(
-                    AppRoutes.productList,
-                    arguments: ProductListArgs(
-                      categoryId: categoryId,
-                      title: category.name,
-                    ),
-                  );
-                },
-                child: const Text('View all'),
-              ),
-            ],
+          IconButton(
+            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.cart),
+            icon: const Icon(Icons.shopping_cart_outlined),
           ),
-          const SizedBox(height: AppSpacing.space2),
-          if (products.isEmpty)
-            const Text('No products in this category yet.')
-          else
-            ...products.take(6).map(
-                  (p) => _ProductTile(
-                    product: p,
-                    onTap: () {
-                      Navigator.of(context).pushNamed(
-                        AppRoutes.productDetail,
-                        arguments: ProductDetailArgs(productId: p.id),
-                      );
-                    },
-                  ),
-                ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _openFilters(category),
+        icon: const Icon(Icons.tune_rounded),
+        label: Text(_filter.hasActiveFilters ? 'Filter · On' : 'Filter / Sort'),
+      ),
+      body: CustomScrollView(
+        slivers: [
+          if (category.imageAsset.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.space4,
+                  AppSpacing.space4,
+                  AppSpacing.space4,
+                  0,
+                ),
+                child: CategoryImage(
+                  imageAsset: category.imageAsset,
+                  fallbackIcon: category.icon,
+                  fallbackIconColor: Color(category.iconColor),
+                  fallbackBackground: Color(category.iconBackground),
+                  height: 140,
+                  borderRadius: AppRadius.lgAll,
+                  fit: BoxFit.cover,
+                  iconSize: AppSpacing.space8,
+                ),
+              ),
+            ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.space4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    category.description.isEmpty
+                        ? 'Browse ${category.name.toLowerCase()} products'
+                        : category.description,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.space2),
+                  Text(
+                    '${products.length} products',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (products.isEmpty)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: Text('No products match these filters')),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.space4,
+                0,
+                AppSpacing.space4,
+                AppSpacing.space16,
+              ),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: AppSpacing.space3,
+                  crossAxisSpacing: AppSpacing.space3,
+                  childAspectRatio: 0.58,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final product = products[index];
+                    return _ProductGridCard(
+                      product: product,
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          AppRoutes.productDetail,
+                          arguments: ProductDetailArgs(productId: product.id),
+                        );
+                      },
+                    );
+                  },
+                  childCount: products.length,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductGridCard extends StatelessWidget {
+  const _ProductGridCard({required this.product, required this.onTap});
+
+  final CatalogProduct product;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final from = CatalogMockData.cheapestVariantFor(product.id);
+    final brandName = from?.brandName ?? product.subCategoryName;
+    final inStock = from?.inStock ?? true;
+
+    return Material(
+      color: AppColors.surface,
+      elevation: AppElevation.level1,
+      shadowColor: AppColors.shadow,
+      borderRadius: AppRadius.lgAll,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CategoryImage(
+              imageAsset: product.imageAsset,
+              fallbackIcon: product.icon,
+              fallbackIconColor: AppColors.primary,
+              fallbackBackground: AppColors.surfaceContainer,
+              height: 80,
+              fit: BoxFit.cover,
+              iconSize: AppSpacing.space6,
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.space2,
+                  AppSpacing.space2,
+                  AppSpacing.space2,
+                  AppSpacing.space2,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.zero,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          Text(
+                            brandName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            product.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              height: 1.2,
+                            ),
+                          ),
+                          Text(
+                            product.specSummary,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: AppSpacing.space1),
+                          Text(
+                            from == null
+                                ? product.priceWithUnit
+                                : '${from.priceLabel} / ${product.unit}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.space1),
+                          StockStatusChip(inStock: inStock),
+                        ],
+                      ),
+                    ),
+                    ProductActionBar(
+                      product: product,
+                      compact: true,
+                      showQuote: false,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -240,7 +384,7 @@ class CategoriesGrid extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   Text(
-                    '${category.itemCount} items',
+                    '${category.itemCount} products',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -249,42 +393,6 @@ class CategoriesGrid extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _ProductTile extends StatelessWidget {
-  const _ProductTile({required this.product, required this.onTap});
-
-  final CatalogProduct product;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final variants = CatalogMockData.variantsByProduct(product.id);
-    final from = CatalogMockData.cheapestVariantFor(product.id);
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.space2),
-      child: ListTile(
-        onTap: onTap,
-        leading: CategoryImage(
-          imageAsset: product.imageAsset,
-          fallbackIcon: product.icon,
-          fallbackIconColor: AppColors.primary,
-          fallbackBackground: AppColors.surfaceContainer,
-          width: 48,
-          height: 48,
-          borderRadius: BorderRadius.circular(24),
-          fit: BoxFit.cover,
-        ),
-        title: Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text(
-          from == null
-              ? '${variants.length} brands'
-              : '${variants.length} brands · from ${from.priceLabel}',
-        ),
-        trailing: const Icon(Icons.chevron_right_rounded),
-      ),
     );
   }
 }

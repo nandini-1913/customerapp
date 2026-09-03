@@ -91,6 +91,109 @@ abstract final class CatalogMockData {
     return list.first;
   }
 
+  /// Other products in the same main category (for Complete System).
+  static List<CatalogProduct> compatibleProductsFor(
+    CatalogProduct product, {
+    String? sizeFilter,
+  }) {
+    var list = products
+        .where((p) => p.categoryId == product.categoryId && p.id != product.id)
+        .toList();
+    final size = sizeFilter?.trim();
+    if (size != null && size.isNotEmpty) {
+      final needle = size.toLowerCase();
+      list = list.where((p) {
+        final specSize = (p.specifications['Size'] ?? '').toLowerCase();
+        final summary = p.specSummary.toLowerCase();
+        final name = p.name.toLowerCase();
+        return specSize.contains(needle) ||
+            summary.contains(needle) ||
+            name.contains(needle);
+      }).toList();
+    }
+    return list;
+  }
+
+  static List<String> sizeOptionsForCategory(String categoryId) {
+    final values = <String>{};
+    for (final p in productsByCategory(categoryId)) {
+      final size = p.specifications['Size']?.trim() ?? '';
+      if (size.isNotEmpty) values.add(size);
+    }
+    final list = values.toList()..sort();
+    return list;
+  }
+
+  static List<String> attributeOptionsForCategory(
+    String categoryId,
+    String key,
+  ) {
+    final values = <String>{};
+    for (final p in productsByCategory(categoryId)) {
+      final v = p.specifications[key]?.trim() ?? '';
+      if (v.isNotEmpty) values.add(v);
+    }
+    final list = values.toList()..sort();
+    return list;
+  }
+
+  static List<CatalogProduct> filterProducts({
+    required List<CatalogProduct> source,
+    String? subCategoryId,
+    String? brandId,
+    String? size,
+    String? material,
+    ProductSort sort = ProductSort.popularity,
+  }) {
+    var list = List<CatalogProduct>.from(source);
+    if (subCategoryId != null && subCategoryId.isNotEmpty) {
+      list = list.where((p) => p.subCategoryId == subCategoryId).toList();
+    }
+    if (size != null && size.isNotEmpty) {
+      final needle = size.toLowerCase();
+      list = list.where((p) {
+        final specSize = (p.specifications['Size'] ?? '').toLowerCase();
+        return specSize.contains(needle) ||
+            p.specSummary.toLowerCase().contains(needle);
+      }).toList();
+    }
+    if (material != null && material.isNotEmpty) {
+      final needle = material.toLowerCase();
+      list = list.where((p) {
+        final m = (p.specifications['Material'] ?? '').toLowerCase();
+        return m.contains(needle);
+      }).toList();
+    }
+    if (brandId != null && brandId.isNotEmpty) {
+      list = list.where((p) {
+        return variantsByProduct(p.id).any((v) => v.brandId == brandId);
+      }).toList();
+    }
+
+    switch (sort) {
+      case ProductSort.popularity:
+        list.sort((a, b) {
+          final pa = (a.isPopular ? 2 : 0) + (a.isFeatured ? 1 : 0);
+          final pb = (b.isPopular ? 2 : 0) + (b.isFeatured ? 1 : 0);
+          if (pb != pa) return pb.compareTo(pa);
+          return a.name.compareTo(b.name);
+        });
+      case ProductSort.priceLowHigh:
+        list.sort((a, b) => a.basePrice.compareTo(b.basePrice));
+      case ProductSort.priceHighLow:
+        list.sort((a, b) => b.basePrice.compareTo(a.basePrice));
+      case ProductSort.newest:
+        list = list.reversed.toList();
+      case ProductSort.brandAz:
+        list.sort((a, b) {
+          final ba = cheapestVariantFor(a.id)?.brandName ?? a.name;
+          final bb = cheapestVariantFor(b.id)?.brandName ?? b.name;
+          return ba.compareTo(bb);
+        });
+    }
+    return list;
+  }
+
   static List<CatalogProduct> search(String query) {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return const [];

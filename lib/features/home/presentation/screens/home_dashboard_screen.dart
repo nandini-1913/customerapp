@@ -10,12 +10,9 @@ import '../../../catalog/data/mock/catalog_mock_data.dart';
 import '../../../catalog/domain/models/catalog_models.dart';
 import '../widgets/construction_tools_section.dart';
 import '../widgets/current_offers_section.dart';
-import '../widgets/featured_banner_carousel.dart';
 import '../widgets/featured_products_section.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/home_category_card.dart';
-import '../widgets/home_greeting.dart';
-import '../widgets/home_rewards_card.dart';
 import '../widgets/home_search_bar.dart';
 import '../widgets/popular_brands_section.dart';
 import '../widgets/popular_products_section.dart';
@@ -32,16 +29,6 @@ class HomeDashboardScreen extends StatefulWidget {
 }
 
 class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RecentlyViewedController>().seedIfEmpty(
-            CatalogMockData.featuredVariants.take(4).toList(),
-          );
-    });
-  }
-
   void _open(String route, {Object? arguments}) {
     Navigator.of(context).pushNamed(route, arguments: arguments);
   }
@@ -91,24 +78,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             iconColor: c.iconColor,
             iconBackground: c.iconBackground,
             imageAsset: c.imageAsset,
-          ),
-        )
-        .toList();
-
-    final banners = CatalogMockData.banners
-        .map(
-          (b) => legacy.HomeBanner(
-            id: b.id,
-            eyebrow: b.eyebrow,
-            headline: b.headline,
-            description: b.description,
-            ctaLabel: b.ctaLabel,
-            routeName: b.routeName.isNotEmpty
-                ? b.routeName
-                : AppRoutes.categoryBrowse,
-            icon: b.icon,
-            gradientStart: b.gradientStart,
-            gradientEnd: b.gradientEnd,
           ),
         )
         .toList();
@@ -172,7 +141,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.space4,
-                      AppSpacing.space3,
+                      AppSpacing.space4,
                       AppSpacing.space4,
                       0,
                     ),
@@ -182,51 +151,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                       onScan: () => _open(AppRoutes.search),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.space4,
-                      AppSpacing.space5,
-                      AppSpacing.space4,
-                      AppSpacing.space4,
-                    ),
-                    child: HomeGreeting(user: user),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.space4,
-                      0,
-                      AppSpacing.space4,
-                      AppSpacing.space4,
-                    ),
-                    child: const HomeRewardsCard(),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.space4,
-                    ),
-                    child: FeaturedBannerCarousel(
-                      banners: banners,
-                      onCta: (banner) {
-                        final source = CatalogMockData.banners
-                            .where((b) => b.id == banner.id)
-                            .toList();
-                        final match = source.isEmpty ? null : source.first;
-                        if (match?.categoryId != null) {
-                          _open(
-                            AppRoutes.categoryBrowse,
-                            arguments: CategoryBrowseArgs(
-                              categoryId: match!.categoryId!,
-                            ),
-                          );
-                        } else if (match?.routeName == AppRoutes.offers) {
-                          _open(AppRoutes.offers);
-                        } else {
-                          _open(banner.routeName);
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.space5),
+                  const SizedBox(height: AppSpacing.space4),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.space4,
@@ -260,7 +185,8 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                     products: CatalogMockData.featuredProducts,
                     onViewAll: () => _open(
                       AppRoutes.productList,
-                      arguments: const ProductListArgs(title: 'Featured Products'),
+                      arguments:
+                          const ProductListArgs(title: 'Featured Products'),
                     ),
                     onProductTap: _openProduct,
                   ),
@@ -296,11 +222,14 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                   const _SectionDivider(),
                   RecentlyViewedSection(
                     products: recentlyViewed,
-                    onViewAll: () => _open(
-                      AppRoutes.productList,
-                      arguments:
-                          const ProductListArgs(title: 'Popular Products'),
-                    ),
+                    onViewAll: recentlyViewed.isEmpty
+                        ? null
+                        : () => _open(
+                              AppRoutes.productList,
+                              arguments: const ProductListArgs(
+                                title: 'Recently Viewed',
+                              ),
+                            ),
                     onTap: _openVariant,
                   ),
                   const SizedBox(height: AppSpacing.space5),

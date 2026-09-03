@@ -23,8 +23,6 @@ class RecentlyViewedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (products.isEmpty) return const SizedBox.shrink();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -32,27 +30,45 @@ class RecentlyViewedSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
           child: HomeSectionHeader(
             title: 'Recently Viewed',
-            onViewAll: onViewAll,
+            onViewAll: products.isEmpty ? null : onViewAll,
           ),
         ),
         const SizedBox(height: AppSpacing.space3),
-        SizedBox(
-          height: AppSpacing.space16 * 2,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
+        if (products.isEmpty)
+          Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
-            itemCount: products.length,
-            separatorBuilder: (_, _) =>
-                const SizedBox(width: AppSpacing.space3),
-            itemBuilder: (context, index) {
-              final product = products[index];
-              return RecentlyViewedCard(
-                product: product,
-                onTap: () => onTap?.call(product),
-              );
-            },
+            child: Material(
+              color: AppColors.surface,
+              borderRadius: AppRadius.lgAll,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.space4),
+                child: Text(
+                  'No recently viewed products yet. Browse the catalogue to see them here.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.outline,
+                      ),
+                ),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: AppSpacing.space16 * 2,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space4),
+              itemCount: products.length,
+              separatorBuilder: (_, _) =>
+                  const SizedBox(width: AppSpacing.space3),
+              itemBuilder: (context, index) {
+                final product = products[index];
+                return RecentlyViewedCard(
+                  product: product,
+                  onTap: () => onTap?.call(product),
+                );
+              },
+            ),
           ),
-        ),
       ],
     );
   }

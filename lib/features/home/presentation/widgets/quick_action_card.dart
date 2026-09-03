@@ -53,27 +53,27 @@ class QuickActionCard extends StatelessWidget {
       color: AppColors.surface,
       elevation: AppElevation.level1,
       shadowColor: AppColors.shadow,
-      borderRadius: AppRadius.lgAll,
+      borderRadius: AppRadius.mdAll,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.lgAll,
+        borderRadius: AppRadius.mdAll,
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.space2,
-            vertical: AppSpacing.space3,
+            horizontal: AppSpacing.space1,
+            vertical: AppSpacing.space2,
           ),
           decoration: BoxDecoration(
-            borderRadius: AppRadius.lgAll,
+            borderRadius: AppRadius.mdAll,
             border: Border.all(color: AppColors.divider),
           ),
           child: Column(
             children: [
               Container(
-                width: AppSpacing.space12,
-                height: AppSpacing.space12,
+                width: AppSpacing.space10,
+                height: AppSpacing.space10,
                 decoration: BoxDecoration(
                   color: Color(action.iconBackground),
-                  borderRadius: AppRadius.mdAll,
+                  borderRadius: AppRadius.smAll,
                 ),
                 child: Icon(
                   appIcon(action.icon),
@@ -81,14 +81,16 @@ class QuickActionCard extends StatelessWidget {
                   size: AppSpacing.space5,
                 ),
               ),
-              const SizedBox(height: AppSpacing.space2),
+              const SizedBox(height: AppSpacing.space1),
               Text(
                 action.title,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.labelMedium?.copyWith(
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(
                   color: AppColors.onSurface,
                   fontWeight: FontWeight.w600,
-                  height: 1.3,
+                  height: 1.2,
                 ),
               ),
             ],
