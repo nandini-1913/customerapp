@@ -18,6 +18,7 @@ abstract final class AppRoutes {
   static const String categoryBrowse = '/category-browse';
   static const String productList = '/product-list';
   static const String productDetail = '/product-detail';
+  static const String upvcPipeVariants = '/upvc-pipe-variants';
   static const String dealers = '/dealers';
   static const String brands = '/brands';
   static const String brandProducts = '/brand-products';
@@ -97,6 +98,13 @@ class ProductDetailArgs {
 
   final String productId;
   final String? variantId;
+}
+
+class UpvcPipeVariantsArgs {
+  const UpvcPipeVariantsArgs({this.subCategoryId});
+
+  /// When null, includes all pipe types under Pipes & Tubing.
+  final String? subCategoryId;
 }
 
 class BrandProductsArgs {

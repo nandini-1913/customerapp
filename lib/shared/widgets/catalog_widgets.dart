@@ -13,26 +13,51 @@ import '../../features/catalog/domain/models/catalog_models.dart';
 
 /// Compact stock status chip used across catalog UIs.
 class StockStatusChip extends StatelessWidget {
-  const StockStatusChip({super.key, required this.inStock});
+  const StockStatusChip({
+    super.key,
+    this.inStock,
+    this.status,
+  }) : assert(inStock != null || status != null);
 
-  final bool inStock;
+  final bool? inStock;
+  final StockStatus? status;
+
+  StockStatus get _resolved {
+    if (status != null) return status!;
+    return inStock == true ? StockStatus.inStock : StockStatus.outOfStock;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final resolved = _resolved;
+    final label = switch (resolved) {
+      StockStatus.inStock => 'In Stock',
+      StockStatus.limited => 'Limited Stock',
+      StockStatus.outOfStock => 'Out of Stock',
+    };
+    final color = switch (resolved) {
+      StockStatus.inStock => AppColors.success,
+      StockStatus.limited => AppColors.warning,
+      StockStatus.outOfStock => AppColors.error,
+    };
+    final background = switch (resolved) {
+      StockStatus.inStock => AppColors.successContainer,
+      StockStatus.limited => AppColors.warningContainer,
+      StockStatus.outOfStock => AppColors.errorContainer,
+    };
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.space2,
         vertical: AppSpacing.space1,
       ),
       decoration: BoxDecoration(
-        color: inStock ? AppColors.successContainer : AppColors.errorContainer,
+        color: background,
         borderRadius: AppRadius.pillAll,
       ),
       child: Text(
-        inStock ? 'In Stock' : 'Out of Stock',
-        style: AppTypography.labelSmallMono(
-          color: inStock ? AppColors.success : AppColors.error,
-        ),
+        label,
+        style: AppTypography.labelSmallMono(color: color),
       ),
     );
   }

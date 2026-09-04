@@ -180,6 +180,10 @@ class ProductVariant {
     this.minimumOrderQuantity = 1,
     this.isFeatured = false,
     this.isPopular = false,
+    this.pipeType,
+    this.mrp,
+    this.purchasePrice,
+    this.discountRate,
   });
 
   final String id;
@@ -206,13 +210,35 @@ class ProductVariant {
   final int minimumOrderQuantity;
   final bool isFeatured;
   final bool isPopular;
+  /// Pipe schedule type (e.g. SCH40, SCH80). Null for non-pipe variants.
+  final String? pipeType;
+  final double? mrp;
+  final double? purchasePrice;
+  /// Discount off MRP stored as fraction (0.08 = 8%).
+  final double? discountRate;
 
   /// Display name including brand for cart/quotation lines.
   String get displayName => '$brandName $productName';
 
   bool get inStock => stockStatus != StockStatus.outOfStock;
 
+  /// Selling price derived from MRP and [discountRate]: MRP − (MRP × discountRate).
+  double? get sellingPrice =>
+      mrp == null || discountRate == null ? null : mrp! - (mrp! * discountRate!);
+
   String get priceLabel => _formatInr(price);
+
+  String? get mrpLabel => mrp == null ? null : _formatInr(mrp!);
+
+  String? get purchasePriceLabel =>
+      purchasePrice == null ? null : _formatInr(purchasePrice!);
+
+  String? get sellingPriceLabel =>
+      sellingPrice == null ? null : _formatInr(sellingPrice!);
+
+  String? get discountPercentLabel => discountRate == null
+      ? null
+      : '${(discountRate! * 100).toStringAsFixed(1)}%';
 
   String get priceWithUnit => '$priceLabel / $unit';
 

@@ -15,6 +15,11 @@ class PlumbingCatalogRow {
     required this.attributes,
     this.isFeatured = false,
     this.isPopular = false,
+    this.pipeType,
+    this.mrp,
+    this.purchasePrice,
+    /// Stored as a fraction (0.08 = 8% discount off MRP).
+    this.discountRate,
   });
 
   final String productId;
@@ -28,6 +33,10 @@ class PlumbingCatalogRow {
   final String attributes;
   final bool isFeatured;
   final bool isPopular;
+  final String? pipeType;
+  final double? mrp;
+  final double? purchasePrice;
+  final double? discountRate;
 }
 
 abstract final class PlumbingCatalogRows {
@@ -44,6 +53,10 @@ abstract final class PlumbingCatalogRows {
       attributes: 'Class 3 (6 kg/cm2), 6m length',
       isFeatured: true,
       isPopular: true,
+      pipeType: 'SCH40',
+      mrp: 450.0,
+      purchasePrice: 382.0,
+      discountRate: 0.08,
     ),
     PlumbingCatalogRow(
       productId: 'PROD-1002',
@@ -57,6 +70,10 @@ abstract final class PlumbingCatalogRows {
       attributes: 'Class 3 (6 kg/cm2), 6m length',
       isFeatured: true,
       isPopular: true,
+      pipeType: 'SCH40',
+      mrp: 580.0,
+      purchasePrice: 494.0,
+      discountRate: 0.085,
     ),
     PlumbingCatalogRow(
       productId: 'PROD-1003',
@@ -70,6 +87,10 @@ abstract final class PlumbingCatalogRows {
       attributes: 'Class 4 (10 kg/cm2), 6m length',
       isFeatured: true,
       isPopular: true,
+      pipeType: 'SCH80',
+      mrp: 1150.0,
+      purchasePrice: 980.0,
+      discountRate: 0.10,
     ),
     PlumbingCatalogRow(
       productId: 'PROD-1004',

@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_elevation.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/catalog_filter_sheet.dart';
 import '../../../../shared/widgets/catalog_widgets.dart';
 import '../../../../shared/widgets/category_image.dart';
@@ -48,6 +49,9 @@ class _CategoryBrowseScreenState extends State<CategoryBrowseScreen> {
 
     final theme = Theme.of(context);
     final source = CatalogMockData.productsByCategory(category.id);
+    final subs = CatalogMockData.subCategoriesFor(category.id);
+    final isUpvcFiltered =
+        CatalogMockData.isUpvcPipesSubCategory(_filter.subCategoryId);
     final products = CatalogMockData.filterProducts(
       source: source,
       subCategoryId: _filter.subCategoryId,
@@ -56,6 +60,7 @@ class _CategoryBrowseScreenState extends State<CategoryBrowseScreen> {
       material: _filter.material,
       sort: _filter.sort,
     );
+    final upvcVariants = CatalogMockData.upvcPipeVariants;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -73,11 +78,15 @@ class _CategoryBrowseScreenState extends State<CategoryBrowseScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openFilters(category),
-        icon: const Icon(Icons.tune_rounded),
-        label: Text(_filter.hasActiveFilters ? 'Filter · On' : 'Filter / Sort'),
-      ),
+      floatingActionButton: isUpvcFiltered
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () => _openFilters(category),
+              icon: const Icon(Icons.tune_rounded),
+              label: Text(
+                _filter.hasActiveFilters ? 'Filter · On' : 'Filter / Sort',
+              ),
+            ),
       body: CustomScrollView(
         slivers: [
           if (category.imageAsset.isNotEmpty)
@@ -115,17 +124,86 @@ class _CategoryBrowseScreenState extends State<CategoryBrowseScreen> {
                   ),
                   const SizedBox(height: AppSpacing.space2),
                   Text(
-                    '${products.length} products',
+                    isUpvcFiltered
+                        ? '1 product line · ${upvcVariants.length} variants'
+                        : '${products.length} products',
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                  if (subs.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.space3),
+                    Wrap(
+                      spacing: AppSpacing.space2,
+                      runSpacing: AppSpacing.space2,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('All'),
+                          selected: _filter.subCategoryId == null,
+                          onSelected: (selected) {
+                            if (!selected) return;
+                            setState(
+                              () => _filter =
+                                  _filter.copyWith(clearSubCategory: true),
+                            );
+                          },
+                        ),
+                        for (final sub in subs)
+                          ChoiceChip(
+                            label: Text(sub.name),
+                            selected: _filter.subCategoryId == sub.id,
+                            onSelected: (selected) {
+                              if (!selected) return;
+                              setState(
+                                () => _filter = _filter.copyWith(
+                                  subCategoryId: sub.id,
+                                  clearBrand: true,
+                                  clearSize: true,
+                                  clearMaterial: true,
+                                ),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                    if (isUpvcFiltered) ...[
+                      const SizedBox(height: AppSpacing.space2),
+                      Text(
+                        'UPVC pipes are configured by brand and size on the next screen.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.outline,
+                        ),
+                      ),
+                    ],
+                  ],
                 ],
               ),
             ),
           ),
-          if (products.isEmpty)
+          if (isUpvcFiltered)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.space4,
+                0,
+                AppSpacing.space4,
+                AppSpacing.space16,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: _UpvcPipesSummaryCard(
+                  variants: upvcVariants,
+                  onTap: () {
+                    Navigator.of(context).pushNamed(
+                      AppRoutes.upvcPipeVariants,
+                      arguments: UpvcPipeVariantsArgs(
+                        subCategoryId: CatalogMockData.upvcPipesSubCategoryId,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            )
+          else if (products.isEmpty)
             const SliverFillRemaining(
               hasScrollBody: false,
               child: Center(child: Text('No products match these filters')),
@@ -163,6 +241,153 @@ class _CategoryBrowseScreenState extends State<CategoryBrowseScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _UpvcPipesSummaryCard extends StatelessWidget {
+  const _UpvcPipesSummaryCard({
+    required this.variants,
+    required this.onTap,
+  });
+
+  final List<ProductVariant> variants;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final brands = variants.map((v) => v.brandName).toSet().length;
+    final sizes = variants
+        .map((v) => v.specifications['Size'] ?? '')
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .length;
+    final types =
+        variants.map((v) => v.pipeType ?? '').where((t) => t.isNotEmpty).toSet();
+    final schedules = variants
+        .map(CatalogMockData.pipeScheduleFor)
+        .whereType<String>()
+        .toSet();
+
+    final sample = CatalogMockData.productsBySubCategory(
+      CatalogMockData.upvcPipesSubCategoryId,
+    );
+    final imageAsset =
+        sample.isNotEmpty ? sample.first.imageAsset : variants.first.imageAsset;
+    final icon = sample.isNotEmpty ? sample.first.icon : variants.first.icon;
+
+    return Material(
+      color: AppColors.surface,
+      elevation: AppElevation.level2,
+      shadowColor: AppColors.shadow,
+      borderRadius: AppRadius.lgAll,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CategoryImage(
+              imageAsset: imageAsset,
+              fallbackIcon: icon,
+              fallbackIconColor: AppColors.primary,
+              fallbackBackground: AppColors.surfaceContainer,
+              height: 120,
+              fit: BoxFit.cover,
+              iconSize: AppSpacing.space8,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.space4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'UPVC Pipes',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space1),
+                  Text(
+                    '${variants.length} configurable variants across brands and sizes',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.outline,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.space3),
+                  Wrap(
+                    spacing: AppSpacing.space2,
+                    runSpacing: AppSpacing.space2,
+                    children: [
+                      _AttributeChip(
+                        label: 'Brand',
+                        value: '$brands options',
+                      ),
+                      _AttributeChip(
+                        label: 'Size',
+                        value: '$sizes options',
+                      ),
+                      _AttributeChip(
+                        label: 'Category',
+                        value: schedules.join(', '),
+                      ),
+                      _AttributeChip(
+                        label: 'Type',
+                        value: types.join(', '),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.space3),
+                  Row(
+                    children: [
+                      Text(
+                        'View variants & pricing',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.space1),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AttributeChip extends StatelessWidget {
+  const _AttributeChip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space2,
+        vertical: AppSpacing.space1,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainer,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Text(
+        '$label · $value',
+        style: AppTypography.caption(color: AppColors.onSurfaceVariant),
       ),
     );
   }

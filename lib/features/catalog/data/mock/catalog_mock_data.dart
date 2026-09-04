@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/catalog_models.dart';
@@ -8,6 +10,14 @@ import 'plumbing_catalog_rows.dart';
 /// Replace with repository/API later; keep query APIs stable.
 abstract final class CatalogMockData {
   static final _CatalogIndex _index = _CatalogIndex.build();
+
+  /// Generated sub-category id for Pipes & Tubing → UPVC (`_subId` slug).
+  static const String upvcPipesSubCategoryId = 'cat-pipes-tubing__upvc';
+  static const String pipesTubingCategoryId = 'cat-pipes-tubing';
+  static const String pipeSummaryImageAsset =
+      'assets/images/pipes/astral_upvc_pipe.jpg';
+  static const String pipeAllThumbnailAsset =
+      'assets/images/pipes/thumb_all.png';
 
   static List<Category> get categories => _index.categories;
   static List<SubCategory> get subCategories => _index.subCategories;
@@ -41,6 +51,129 @@ abstract final class CatalogMockData {
 
   static List<ProductVariant> variantsByCategory(String categoryId) =>
       variants.where((v) => v.categoryId == categoryId).toList();
+
+  static List<ProductVariant> get upvcPipeVariants => variants
+      .where(
+        (v) =>
+            v.subCategoryId == upvcPipesSubCategoryId && v.pipeType != null,
+      )
+      .toList();
+
+  static bool isUpvcPipesSubCategory(String? subCategoryId) =>
+      subCategoryId == upvcPipesSubCategoryId;
+
+  /// Sidebar label for Pipes & Tubing subcategories.
+  static String pipeSubCategoryDisplayName(SubCategory sub) => sub.name;
+
+  /// Circular sidebar thumbnail per pipe subcategory.
+  static String pipeSubCategoryImageAsset(String subCategoryId) {
+    switch (subCategoryId) {
+      case upvcPipesSubCategoryId:
+        return 'assets/images/pipes/thumb_upvc.png';
+      case 'cat-pipes-tubing__cpvc':
+        return 'assets/images/pipes/thumb_cpvc.png';
+      case 'cat-pipes-tubing__pvc-swr':
+        return 'assets/images/pipes/thumb_pvc_swr.png';
+      case 'cat-pipes-tubing__hdpe':
+        return 'assets/images/pipes/thumb_hdpe.png';
+      default:
+        return pipeSummaryImageAsset;
+    }
+  }
+
+  static IconData pipeSubCategoryIcon(String subCategoryId) {
+    if (isUpvcPipesSubCategory(subCategoryId)) {
+      return Icons.water_rounded;
+    }
+    switch (subCategoryId) {
+      case 'cat-pipes-tubing__cpvc':
+        return Icons.plumbing_rounded;
+      case 'cat-pipes-tubing__pvc-swr':
+        return Icons.waves_rounded;
+      case 'cat-pipes-tubing__hdpe':
+        return Icons.water_drop_outlined;
+      default:
+        return Icons.water_rounded;
+    }
+  }
+
+  static String? pipeScheduleFor(ProductVariant variant) =>
+      pipeScheduleLabel(variant);
+
+  static String? pipeScheduleLabel(ProductVariant variant) {
+    final attrs = variant.specifications['Attributes'] ?? '';
+    final classMatch = RegExp(r'Class \d+').firstMatch(attrs);
+    if (classMatch != null) return classMatch.group(0);
+    final sdrMatch = RegExp(r'SDR \d+', caseSensitive: false).firstMatch(attrs);
+    if (sdrMatch != null) return sdrMatch.group(0);
+    return null;
+  }
+
+  static List<ProductVariant> pipeVariantsForSubCategory(String? subCategoryId) {
+    if (subCategoryId == null) {
+      return variants
+          .where((v) => v.categoryId == pipesTubingCategoryId)
+          .toList();
+    }
+    return variants.where((v) => v.subCategoryId == subCategoryId).toList();
+  }
+
+  static List<ProductVariant> filterPipeVariants({
+    required List<ProductVariant> source,
+    String? brandId,
+    String? size,
+    String? pipeType,
+    String? scheduleCategory,
+  }) {
+    return source.where((v) {
+      if (brandId != null && brandId.isNotEmpty && v.brandId != brandId) {
+        return false;
+      }
+      if (size != null && size.isNotEmpty) {
+        final variantSize = v.specifications['Size'] ?? '';
+        if (variantSize != size) return false;
+      }
+      if (pipeType != null && pipeType.isNotEmpty && v.pipeType != pipeType) {
+        return false;
+      }
+      if (scheduleCategory != null && scheduleCategory.isNotEmpty) {
+        if (pipeScheduleLabel(v) != scheduleCategory) return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  static List<ProductVariant> filterUpvcPipeVariants({
+    String? brandId,
+    String? size,
+    String? pipeType,
+    String? scheduleCategory,
+  }) {
+    return filterPipeVariants(
+      source: upvcPipeVariants,
+      brandId: brandId,
+      size: size,
+      pipeType: pipeType,
+      scheduleCategory: scheduleCategory,
+    );
+  }
+
+  static String pipeConfiguratorTitle(ProductVariant variant) {
+    final size = variant.specifications['Size'] ?? '';
+    final type = variant.pipeType ?? variant.subCategoryName;
+    final schedule = pipeScheduleLabel(variant);
+    return [
+      variant.productName,
+      type,
+      if (schedule != null && schedule.isNotEmpty) schedule,
+      if (size.isNotEmpty) '($size)',
+    ].join(' ');
+  }
+
+  static String pipeConfiguratorScreenTitle(String? subCategoryId) {
+    if (subCategoryId == null) return 'Pipes & Tubing';
+    return '${subCategoryById(subCategoryId)?.name ?? 'Pipe'} Pipes';
+  }
 
   static CatalogProduct? productById(String id) {
     for (final p in products) {
@@ -497,6 +630,9 @@ class _CatalogIndex {
     }
 
     final products = <CatalogProduct>[];
+    final rowByProductId = {
+      for (final row in rows) row.productId: row,
+    };
     for (final row in rows) {
       final meta = categoryMeta[row.mainCategory]!;
       final subId = _subId(meta.id, row.subCategory);
@@ -539,14 +675,58 @@ class _CatalogIndex {
 
       for (var i = 0; i < selected.length; i++) {
         final brand = selected[i];
-        final delta = _priceDelta(i, selected.length);
-        final price = (product.basePrice * (1 + delta))
-            .roundToDouble()
-            .clamp(1.0, 999999999.0)
-            .toDouble();
-        final stock = i == selected.length - 1 && selected.length > 2
-            ? StockStatus.limited
-            : StockStatus.inStock;
+        final row = rowByProductId[product.id];
+        final isUpvcPipe =
+            product.subCategoryId == CatalogMockData.upvcPipesSubCategoryId;
+        final isPipesTubing =
+            product.categoryId == CatalogMockData.pipesTubingCategoryId;
+
+        late final double price;
+        String? pipeType;
+        double? mrp;
+        double? purchasePrice;
+        double? discountRate;
+
+        if (isUpvcPipe && row?.mrp != null && row?.discountRate != null) {
+          final brandFactor = _upvcBrandPriceFactor(brand.id, i);
+          mrp = (row!.mrp! * brandFactor.mrpMultiplier)
+              .roundToDouble()
+              .clamp(1.0, 999999999.0);
+          purchasePrice = (row.purchasePrice! * brandFactor.ppMultiplier)
+              .roundToDouble()
+              .clamp(1.0, 999999999.0);
+          discountRate = (row.discountRate! + brandFactor.discountDelta)
+              .clamp(0.0, 0.5);
+          pipeType = row.pipeType;
+          price = mrp - (mrp * discountRate);
+        } else if (isPipesTubing) {
+          final brandFactor = _upvcBrandPriceFactor(brand.id, i);
+          final delta = _priceDelta(i, selected.length);
+          final baseMrp = product.basePrice * (1 + delta) * brandFactor.mrpMultiplier;
+          mrp = baseMrp.roundToDouble().clamp(1.0, 999999999.0);
+          purchasePrice = (product.basePrice * (0.84 + delta.abs() * 0.02) *
+                  brandFactor.ppMultiplier)
+              .roundToDouble()
+              .clamp(1.0, 999999999.0);
+          discountRate =
+              (0.07 + brandFactor.discountDelta + (i * 0.004)).clamp(0.0, 0.5);
+          pipeType = row?.pipeType ?? product.subCategoryName;
+          price = mrp - (mrp * discountRate);
+        } else {
+          final delta = _priceDelta(i, selected.length);
+          price = (product.basePrice * (1 + delta))
+              .roundToDouble()
+              .clamp(1.0, 999999999.0)
+              .toDouble();
+        }
+
+        final stock = isPipesTubing
+            ? (i % 3 == 2
+                ? StockStatus.outOfStock
+                : StockStatus.inStock)
+            : i == selected.length - 1 && selected.length > 2
+                ? StockStatus.limited
+                : StockStatus.inStock;
         final rating = 4.0 + ((i % 5) * 0.1);
         final variantId = '${product.id}__${brand.id}';
         variants.add(
@@ -577,6 +757,10 @@ class _CatalogIndex {
             minimumOrderQuantity: 1,
             isFeatured: product.isFeatured && i == 0,
             isPopular: product.isPopular && i <= 1,
+            pipeType: pipeType,
+            mrp: mrp,
+            purchasePrice: purchasePrice,
+            discountRate: discountRate,
           ),
         );
         brandVariantCounts[brand.id] =
@@ -620,8 +804,28 @@ class _CatalogIndex {
   static double _priceDelta(int index, int total) {
     // Spread brand prices around Excel base (± ~6%).
     if (total <= 1) return 0;
-    final step = 0.04;
+    const step = 0.04;
     return (index - (total - 1) / 2) * step;
+  }
+
+  static ({double mrpMultiplier, double ppMultiplier, double discountDelta})
+      _upvcBrandPriceFactor(String brandId, int index) {
+    switch (brandId) {
+      case 'brand-astral':
+        return (mrpMultiplier: 1.0, ppMultiplier: 1.0, discountDelta: 0.0);
+      case 'brand-supreme':
+        return (mrpMultiplier: 0.97, ppMultiplier: 0.96, discountDelta: 0.005);
+      case 'brand-finolex':
+        return (mrpMultiplier: 1.03, ppMultiplier: 1.02, discountDelta: -0.005);
+      case 'brand-ashirvad':
+        return (mrpMultiplier: 1.06, ppMultiplier: 1.04, discountDelta: -0.01);
+      default:
+        return (
+          mrpMultiplier: 1.0 + (index * 0.01),
+          ppMultiplier: 1.0 + (index * 0.008),
+          discountDelta: 0.0,
+        );
+    }
   }
 
   static String _unitFor(PlumbingCatalogRow row, String fallback) {

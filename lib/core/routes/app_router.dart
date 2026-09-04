@@ -14,8 +14,10 @@ import '../../features/catalog/presentation/screens/cart_screen.dart';
 import '../../features/catalog/presentation/screens/category_browse_screen.dart';
 import '../../features/catalog/presentation/screens/material_calculator_screen.dart';
 import '../../features/catalog/presentation/screens/offers_screen.dart';
+import '../../features/catalog/presentation/screens/pipes_tubing_browse_screen.dart';
 import '../../features/catalog/presentation/screens/product_detail_screen.dart';
 import '../../features/catalog/presentation/screens/product_list_screen.dart';
+import '../../features/catalog/presentation/screens/upvc_pipe_variant_list_screen.dart';
 import '../../features/placeholders/presentation/screens/feature_placeholder_screen.dart';
 import '../../features/profile/presentation/screens/profile_tab_body.dart';
 import '../../features/rewards/presentation/screens/admin_quotation_detail_screen.dart';
@@ -76,8 +78,12 @@ abstract final class AppRouter {
         return _slide(const CategoriesScreen(), settings);
       case AppRoutes.categoryBrowse:
         final args = settings.arguments as CategoryBrowseArgs?;
+        final categoryId = args?.categoryId ?? 'cat-pipes-tubing';
+        if (categoryId == CatalogMockData.pipesTubingCategoryId) {
+          return _slide(const PipesTubingBrowseScreen(), settings);
+        }
         return _slide(
-          CategoryBrowseScreen(categoryId: args?.categoryId ?? 'cat-pipes-tubing'),
+          CategoryBrowseScreen(categoryId: categoryId),
           settings,
         );
       case AppRoutes.productList:
@@ -97,6 +103,14 @@ abstract final class AppRouter {
           ProductDetailScreen(
             productId: args?.productId ?? '',
             initialVariantId: args?.variantId,
+          ),
+          settings,
+        );
+      case AppRoutes.upvcPipeVariants:
+        final args = settings.arguments as UpvcPipeVariantsArgs?;
+        return _slide(
+          UpvcPipeVariantListScreen(
+            subCategoryId: args?.subCategoryId,
           ),
           settings,
         );
