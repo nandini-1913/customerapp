@@ -184,6 +184,7 @@ class ProductVariant {
     this.mrp,
     this.purchasePrice,
     this.discountRate,
+    this.imageUrl,
   });
 
   final String id;
@@ -216,6 +217,8 @@ class ProductVariant {
   final double? purchasePrice;
   /// Discount off MRP stored as fraction (0.08 = 8%).
   final double? discountRate;
+  /// Remote product image URL from catalog API (empty = use [imageAsset]).
+  final String? imageUrl;
 
   /// Display name including brand for cart/quotation lines.
   String get displayName => '$brandName $productName';

@@ -1,3 +1,4 @@
+import 'package:customerapp/core/state/catalog_controller.dart';
 import 'package:customerapp/core/state/cart_controller.dart';
 import 'package:customerapp/core/state/quotation_controller.dart';
 import 'package:customerapp/core/state/recently_viewed_controller.dart';
@@ -21,6 +22,7 @@ void main() {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SessionController()),
+        ChangeNotifierProvider(create: (_) => CatalogController()),
         ChangeNotifierProvider(create: (_) => CartController()),
         ChangeNotifierProvider(create: (_) => WishlistController()),
         ChangeNotifierProvider(create: (_) => RecentlyViewedController()),

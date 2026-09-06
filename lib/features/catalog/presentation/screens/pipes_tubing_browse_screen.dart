@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../../core/network/api_config.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../../core/state/catalog_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_elevation.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -220,25 +223,14 @@ class _PipeSummaryPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final catalog = context.watch<CatalogController>();
     final isAll = subCategory == null;
-    final isUpvc = subCategory != null &&
-        CatalogMockData.isUpvcPipesSubCategory(subCategory!.id);
 
     final variants = isAll
-        ? CatalogMockData.variantsByCategory(
-            CatalogMockData.pipesTubingCategoryId,
-          )
-        : isUpvc
-            ? CatalogMockData.upvcPipeVariants
-            : CatalogMockData.variants
-                .where((v) => v.subCategoryId == subCategory!.id)
-                .toList();
+        ? catalog.pipeVariants
+        : catalog.pipeVariantsForSubCategory(subCategory!.id);
 
-    final products = isAll
-        ? CatalogMockData.productsByCategory(CatalogMockData.pipesTubingCategoryId)
-        : CatalogMockData.productsBySubCategory(subCategory!.id);
-
-    final optionCount = variants.isNotEmpty ? variants.length : products.length;
+    final optionCount = variants.length;
 
     ProductVariant? cheapest;
     for (final variant in variants) {
@@ -262,8 +254,8 @@ class _PipeSummaryPanel extends StatelessWidget {
         : '${subCategory!.name} Pipes';
     final subtitle = isAll
         ? 'UPVC, CPVC, HDPE and SWR · multiple brands and sizes'
-        : isUpvc
-            ? 'Schedule 40 & 80 · multiple brands and sizes'
+        : catalog.isUsingApi
+            ? '${subCategory!.name} · live catalog from admin'
             : '${subCategory!.name} · multiple brands and sizes';
 
     return ColoredBox(
@@ -271,8 +263,21 @@ class _PipeSummaryPanel extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.space4),
         children: [
+          _CatalogSourceBanner(
+            isUsingApi: catalog.isUsingApi,
+            isLoading: catalog.isLoading,
+            error: catalog.error,
+            productCount: variants.length,
+          ),
+          if (catalog.isLoading && variants.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.space3),
+              child: LinearProgressIndicator(),
+            ),
           Text(
-            'Tap the product to view all sizes and brands',
+            catalog.isUsingApi
+                ? 'Live catalog · refreshes every few seconds'
+                : 'Tap the product to view all sizes and brands',
             style: theme.textTheme.bodySmall?.copyWith(
               color: AppColors.outline,
             ),
@@ -281,12 +286,114 @@ class _PipeSummaryPanel extends StatelessWidget {
           _PipeSummaryCard(
             title: title,
             subtitle: subtitle,
-            imageAsset: CatalogMockData.pipeSummaryImageAsset,
+            imageAsset: cheapest?.imageUrl == null
+                ? CatalogMockData.pipeSummaryImageAsset
+                : '',
+            imageUrl: cheapest?.imageUrl,
             fallbackIcon: category?.icon ?? 'plumbing',
             cheapestVariant: cheapest,
             optionCount: optionCount,
             onTap: onOpenList,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CatalogSourceBanner extends StatelessWidget {
+  const _CatalogSourceBanner({
+    required this.isUsingApi,
+    required this.isLoading,
+    required this.error,
+    required this.productCount,
+  });
+
+  final bool isUsingApi;
+  final bool isLoading;
+  final String? error;
+  final int productCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (isUsingApi) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.space3),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.space3,
+          vertical: AppSpacing.space2,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.successContainer,
+          borderRadius: AppRadius.mdAll,
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_done_outlined, size: 18, color: AppColors.success),
+            const SizedBox(width: AppSpacing.space2),
+            Expanded(
+              child: Text(
+                'Live catalog · $productCount products · refreshes every 3s',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.success,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.space3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space3,
+        vertical: AppSpacing.space2,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.warningContainer,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.cloud_off_outlined, size: 18, color: AppColors.warning),
+              const SizedBox(width: AppSpacing.space2),
+              Expanded(
+                child: Text(
+                  isLoading
+                      ? 'Connecting to catalog API…'
+                      : 'Offline demo data (built-in mock catalog)',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: AppColors.warning,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (!isLoading) ...[
+            const SizedBox(height: AppSpacing.space1),
+            Text(
+              'API: ${ApiConfig.baseUrl}',
+              style: theme.textTheme.labelSmall?.copyWith(color: AppColors.outline),
+            ),
+            if (error != null) ...[
+              const SizedBox(height: AppSpacing.space1),
+              Text(
+                error!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(color: AppColors.error),
+              ),
+            ],
+          ],
         ],
       ),
     );
@@ -301,12 +408,14 @@ class _PipeSummaryCard extends StatelessWidget {
     required this.fallbackIcon,
     required this.optionCount,
     required this.onTap,
+    this.imageUrl,
     this.cheapestVariant,
   });
 
   final String title;
   final String subtitle;
   final String imageAsset;
+  final String? imageUrl;
   final String fallbackIcon;
   final int optionCount;
   final ProductVariant? cheapestVariant;
@@ -342,6 +451,7 @@ class _PipeSummaryCard extends StatelessWidget {
                 ),
                 child: CategoryImage(
                   imageAsset: imageAsset,
+                  imageUrl: imageUrl,
                   fallbackIcon: fallbackIcon,
                   fallbackIconColor: AppColors.primary,
                   fallbackBackground: AppColors.surfaceContainer,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/state/catalog_controller.dart';
 import '../../../../core/state/cart_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -25,61 +26,114 @@ class _UpvcPipeVariantListScreenState extends State<UpvcPipeVariantListScreen> {
   String? _brandId;
   String? _size;
   String? _pipeType;
-  late final List<ProductVariant> _all;
+  bool _filtersInitialized = false;
+  String? _initializedForSubCategory;
+  String? _lastCatalogFingerprint;
 
-  @override
-  void initState() {
-    super.initState();
-    _all = CatalogMockData.pipeVariantsForSubCategory(widget.subCategoryId);
-    final initial = _cheapestVariant(_all);
-    if (initial != null) {
-      _brandId = initial.brandId;
-      _size = initial.specifications['Size'];
-      _pipeType = initial.pipeType;
+  List<ProductVariant> _all(CatalogController catalog) =>
+      catalog.pipeVariantsForSubCategory(widget.subCategoryId);
+
+  void _ensureDefaultFilters(
+    List<ProductVariant> all,
+    CatalogController catalog,
+  ) {
+    final key = widget.subCategoryId ?? '__all__';
+    final fingerprint =
+        '${catalog.isUsingApi}:${catalog.pipeCatalogFingerprint}:$key';
+    if (_lastCatalogFingerprint != fingerprint) {
+      _lastCatalogFingerprint = fingerprint;
+      _filtersInitialized = false;
+      _initializedForSubCategory = null;
+      _brandId = null;
+      _size = null;
+      _pipeType = null;
     }
+
+    _sanitizeFilters(all, catalog);
+
+    if (_filtersInitialized && _initializedForSubCategory == key) return;
+    if (all.isEmpty) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_filtersInitialized && _initializedForSubCategory == key) return;
+      final initial = _cheapestVariant(all);
+      if (initial == null) return;
+      setState(() {
+        _brandId = _nonEmpty(initial.brandId);
+        _size = _nonEmpty(initial.specifications['Size']);
+        _pipeType = _nonEmpty(initial.pipeType);
+        _filtersInitialized = true;
+        _initializedForSubCategory = key;
+      });
+    });
   }
 
-  List<ProductVariant> _pool({
+  String? _nonEmpty(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    return value.trim();
+  }
+
+  void _sanitizeFilters(List<ProductVariant> all, CatalogController catalog) {
+    final brands = _brandOptions(all, catalog);
+    final types = _typeOptions(all);
+    final sizes = _sizeOptions(all);
+
+    _brandId = _nonEmpty(_brandId);
+    _size = _nonEmpty(_size);
+    _pipeType = _nonEmpty(_pipeType);
+
+    if (_brandId != null && !brands.contains(_brandId)) _brandId = null;
+    if (_pipeType != null && !types.contains(_pipeType)) _pipeType = null;
+    if (_size != null && !sizes.contains(_size)) _size = null;
+  }
+
+  List<ProductVariant> _pool(
+    List<ProductVariant> source, {
     String? brandId,
     String? size,
     String? pipeType,
   }) {
     return CatalogMockData.filterPipeVariants(
-      source: _all,
+      source: source,
       brandId: brandId,
       size: size,
       pipeType: pipeType,
     );
   }
 
-  List<String> _sizeOptions() => _all
+  List<String> _sizeOptions(List<ProductVariant> all) => all
       .map((v) => v.specifications['Size'] ?? '')
       .where((s) => s.isNotEmpty)
       .toSet()
       .toList()
     ..sort();
 
-  List<String> _brandOptions() => _all
+  List<String> _brandOptions(List<ProductVariant> all, CatalogController catalog) =>
+      all
       .map((v) => v.brandId)
       .toSet()
       .toList()
-    ..sort((a, b) => _brandName(a).compareTo(_brandName(b)));
+    ..sort((a, b) => _brandName(a, catalog).compareTo(_brandName(b, catalog)));
 
-  List<String> _typeOptions() => _all
+  List<String> _typeOptions(List<ProductVariant> all) => all
       .map((v) => v.pipeType ?? '')
       .where((t) => t.isNotEmpty)
       .toSet()
       .toList()
     ..sort();
 
-  String _brandName(String brandId) =>
-      CatalogMockData.brandById(brandId)?.name ?? brandId;
+  String _brandName(String brandId, CatalogController catalog) =>
+      catalog.brandById(brandId)?.name ?? brandId;
 
-  /// Best match for current filters; honors explicit type before looser fallbacks.
-  ProductVariant? get _resolvedVariant {
-    if (_all.isEmpty) return null;
+  ProductVariant? _resolvedVariant(
+    List<ProductVariant> all,
+    CatalogController catalog,
+  ) {
+    if (all.isEmpty) return null;
 
     final exact = _pool(
+      all,
       brandId: _brandId,
       size: _size,
       pipeType: _pipeType,
@@ -88,31 +142,31 @@ class _UpvcPipeVariantListScreenState extends State<UpvcPipeVariantListScreen> {
 
     if (_pipeType != null && _pipeType!.isNotEmpty) {
       if (_brandId != null && _brandId!.isNotEmpty) {
-        final match = _pool(brandId: _brandId, pipeType: _pipeType);
+        final match = _pool(all, brandId: _brandId, pipeType: _pipeType);
         if (match.isNotEmpty) return match.first;
       }
       if (_size != null && _size!.isNotEmpty) {
-        final match = _pool(size: _size, pipeType: _pipeType);
+        final match = _pool(all, size: _size, pipeType: _pipeType);
         if (match.isNotEmpty) return match.first;
       }
-      final byType = _pool(pipeType: _pipeType);
+      final byType = _pool(all, pipeType: _pipeType);
       if (byType.isNotEmpty) return byType.first;
     }
 
     if (_brandId != null && _size != null) {
-      final match = _pool(brandId: _brandId, size: _size);
+      final match = _pool(all, brandId: _brandId, size: _size);
       if (match.isNotEmpty) return match.first;
     }
     if (_brandId != null) {
-      final match = _pool(brandId: _brandId);
+      final match = _pool(all, brandId: _brandId);
       if (match.isNotEmpty) return match.first;
     }
     if (_size != null) {
-      final match = _pool(size: _size);
+      final match = _pool(all, size: _size);
       if (match.isNotEmpty) return match.first;
     }
 
-    return _all.first;
+    return all.first;
   }
 
   ProductVariant? _cheapestVariant(List<ProductVariant> variants) {
@@ -124,14 +178,15 @@ class _UpvcPipeVariantListScreenState extends State<UpvcPipeVariantListScreen> {
     );
   }
 
-  bool _isSizeInStock(String size) {
+  bool _isSizeInStock(List<ProductVariant> all, String size) {
     final matches = _pool(
+      all,
       brandId: _brandId,
       size: size,
       pipeType: _pipeType,
     );
     if (matches.isEmpty) {
-      return _pool(size: size).any((v) => v.inStock);
+      return _pool(all, size: size).any((v) => v.inStock);
     }
     return matches.any((v) => v.inStock);
   }
@@ -140,27 +195,27 @@ class _UpvcPipeVariantListScreenState extends State<UpvcPipeVariantListScreen> {
 
   void _selectBrand(String? brandId) => setState(() => _brandId = brandId);
 
-  void _selectType(String? type) {
+  void _selectType(List<ProductVariant> all, String? type) {
     setState(() {
       _pipeType = type;
       if (type == null || type.isEmpty) return;
 
-      var matches = _pool(brandId: _brandId, size: _size, pipeType: type);
+      var matches = _pool(all, brandId: _brandId, size: _size, pipeType: type);
       if (matches.isNotEmpty) return;
 
-      matches = _pool(brandId: _brandId, pipeType: type);
+      matches = _pool(all, brandId: _brandId, pipeType: type);
       if (matches.isNotEmpty) {
         _size = matches.first.specifications['Size'];
         return;
       }
 
-      matches = _pool(size: _size, pipeType: type);
+      matches = _pool(all, size: _size, pipeType: type);
       if (matches.isNotEmpty) {
         _brandId = matches.first.brandId;
         return;
       }
 
-      matches = _pool(pipeType: type);
+      matches = _pool(all, pipeType: type);
       if (matches.isNotEmpty) {
         final variant = matches.first;
         _brandId = variant.brandId;
@@ -182,15 +237,39 @@ class _UpvcPipeVariantListScreenState extends State<UpvcPipeVariantListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final variant = _resolvedVariant;
+    final catalog = context.watch<CatalogController>();
+    final all = _all(catalog);
+    _ensureDefaultFilters(all, catalog);
+    final variant = _resolvedVariant(all, catalog);
+    final brandItems = _brandOptions(all, catalog)
+        .map((id) => MapEntry(id, _brandName(id, catalog)))
+        .toList();
+    final typeItems = _typeOptions(all).map((t) => MapEntry(t, t)).toList();
     final screenTitle =
         CatalogMockData.pipeConfiguratorScreenTitle(widget.subCategoryId);
+    final heroImageUrl = variant?.imageUrl;
+    final heroImageAsset = heroImageUrl == null
+        ? CatalogMockData.pipeSummaryImageAsset
+        : '';
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         title: Text(screenTitle),
+        actions: [
+          if (catalog.isUsingApi)
+            const Padding(
+              padding: EdgeInsets.only(right: AppSpacing.space3),
+              child: Center(
+                child: Icon(
+                  Icons.cloud_done_outlined,
+                  size: 18,
+                  color: AppColors.success,
+                ),
+              ),
+            ),
+        ],
       ),
       bottomNavigationBar: _BottomActionBar(
         variant: variant,
@@ -214,7 +293,8 @@ class _UpvcPipeVariantListScreenState extends State<UpvcPipeVariantListScreen> {
                 border: Border.all(color: AppColors.divider),
               ),
               child: CategoryImage(
-                imageAsset: CatalogMockData.pipeSummaryImageAsset,
+                imageAsset: heroImageAsset,
+                imageUrl: heroImageUrl,
                 fallbackIcon: 'plumbing',
                 fallbackIconColor: AppColors.primary,
                 fallbackBackground: AppColors.surfaceContainer,
@@ -246,11 +326,16 @@ class _UpvcPipeVariantListScreenState extends State<UpvcPipeVariantListScreen> {
                   color: AppColors.outline,
                 ),
               ),
+            if (catalog.isLoading && all.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.space3),
+                child: LinearProgressIndicator(),
+              ),
             const SizedBox(height: AppSpacing.space4),
             _SizeSection(
-              sizes: _sizeOptions(),
+              sizes: _sizeOptions(all),
               selected: _size,
-              isSizeInStock: _isSizeInStock,
+              isSizeInStock: (size) => _isSizeInStock(all, size),
               onSelected: _selectSize,
             ),
             const SizedBox(height: AppSpacing.space3),
@@ -258,9 +343,7 @@ class _UpvcPipeVariantListScreenState extends State<UpvcPipeVariantListScreen> {
               label: 'Brand',
               hint: 'Select brand',
               value: _brandId,
-              items: _brandOptions()
-                  .map((id) => MapEntry(id, _brandName(id)))
-                  .toList(),
+              items: brandItems,
               onChanged: _selectBrand,
             ),
             const SizedBox(height: AppSpacing.space3),
@@ -268,8 +351,8 @@ class _UpvcPipeVariantListScreenState extends State<UpvcPipeVariantListScreen> {
               label: 'Type',
               hint: 'Select type',
               value: _pipeType,
-              items: _typeOptions().map((t) => MapEntry(t, t)).toList(),
-              onChanged: _selectType,
+              items: typeItems,
+              onChanged: (type) => _selectType(all, type),
             ),
           ],
         ),
@@ -400,6 +483,18 @@ class _PipeDropdownField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final uniqueItems = <String, String>{};
+    for (final entry in items) {
+      if (entry.key.trim().isEmpty) continue;
+      uniqueItems[entry.key] = entry.value;
+    }
+    final dropdownItems = uniqueItems.entries
+        .map((e) => MapEntry(e.key, e.value))
+        .toList();
+    final selected = value != null && uniqueItems.containsKey(value)
+        ? value
+        : null;
+
     return InputDecorator(
       decoration: InputDecoration(
         labelText: label,
@@ -413,7 +508,7 @@ class _PipeDropdownField extends StatelessWidget {
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           isExpanded: true,
-          value: value,
+          value: selected,
           hint: Text(hint),
           icon: const SizedBox.shrink(),
           items: [
@@ -421,14 +516,14 @@ class _PipeDropdownField extends StatelessWidget {
               value: null,
               child: Text(hint),
             ),
-            ...items.map(
+            ...dropdownItems.map(
               (entry) => DropdownMenuItem<String>(
                 value: entry.key,
                 child: Text(entry.value),
               ),
             ),
           ],
-          onChanged: items.isEmpty ? null : onChanged,
+          onChanged: dropdownItems.isEmpty ? null : onChanged,
         ),
       ),
     );

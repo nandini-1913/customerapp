@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'app_icons.dart';
 
 /// Local category product image with graceful icon fallback.
+/// Supports local assets and remote `http(s)` URLs.
 class CategoryImage extends StatelessWidget {
   const CategoryImage({
     super.key,
-    required this.imageAsset,
+    this.imageAsset = '',
+    this.imageUrl,
     required this.fallbackIcon,
     required this.fallbackIconColor,
     required this.fallbackBackground,
@@ -18,6 +20,7 @@ class CategoryImage extends StatelessWidget {
   });
 
   final String imageAsset;
+  final String? imageUrl;
   final String fallbackIcon;
   final Color fallbackIconColor;
   final Color fallbackBackground;
@@ -41,6 +44,35 @@ class CategoryImage extends StatelessWidget {
       ),
     );
 
+    if (imageAsset.isEmpty && (imageUrl == null || imageUrl!.isEmpty)) {
+      return ClipRRect(
+        borderRadius: radius,
+        child: SizedBox(width: width, height: height, child: fallback),
+      );
+    }
+
+    final remote = imageUrl?.trim();
+    if (remote != null && remote.isNotEmpty && _isNetworkUrl(remote)) {
+      return ClipRRect(
+        borderRadius: radius,
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: Image.network(
+            remote,
+            fit: fit,
+            width: width,
+            height: height,
+            errorBuilder: (context, error, stackTrace) => fallback,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return fallback;
+            },
+          ),
+        ),
+      );
+    }
+
     if (imageAsset.isEmpty) {
       return ClipRRect(
         borderRadius: radius,
@@ -62,5 +94,12 @@ class CategoryImage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static bool _isNetworkUrl(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null &&
+        uri.hasScheme &&
+        (uri.scheme == 'http' || uri.scheme == 'https');
   }
 }
