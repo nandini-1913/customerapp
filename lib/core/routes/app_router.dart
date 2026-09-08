@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../features/auth/presentation/screens/choose_profession_screen.dart';
 import '../../features/auth/presentation/screens/create_account_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
@@ -38,7 +39,17 @@ abstract final class AppRouter {
       case AppRoutes.login:
         return _slide(const LoginScreen(), settings);
       case AppRoutes.createAccount:
-        return _slide(const CreateAccountScreen(), settings);
+        final signupArgs = settings.arguments as SignupFlowArgs?;
+        return _slide(CreateAccountScreen(args: signupArgs), settings);
+      case AppRoutes.chooseProfession:
+        final professionArgs = settings.arguments as SignupFlowArgs?;
+        return _slide(
+          ChooseProfessionScreen(
+            args: professionArgs ??
+                const SignupFlowArgs(mobileNumber: '', fullName: ''),
+          ),
+          settings,
+        );
       case AppRoutes.otpVerification:
         final args = settings.arguments as OtpVerificationArgs?;
         return _slide(

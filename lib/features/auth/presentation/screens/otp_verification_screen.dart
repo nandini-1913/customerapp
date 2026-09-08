@@ -1,22 +1,18 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routes/app_routes.dart';
-import '../../../../core/state/session_controller.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../services/auth_service.dart';
 import '../../services/mock_auth_service.dart';
 import '../widgets/auth_otp_fields.dart';
-import '../widgets/auth_primary_button.dart';
-import '../widgets/auth_text_field.dart';
-import '../widgets/auth_validators.dart';
+import '../widgets/login_flow_widgets.dart';
 
+/// Step 2 — OTP verification (login flow + password reset).
 class OtpVerificationScreen extends StatefulWidget {
   const OtpVerificationScreen({
     super.key,
@@ -43,7 +39,10 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   String? _error;
 
   bool get _isPasswordReset => widget.args.purpose == OtpPurpose.passwordReset;
-  bool get _isEmailReset => _isPasswordReset && widget.args.resetIsEmail;
+
+  String get _rawMobile =>
+      widget.args.mobileNumber ??
+      _contact.replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp(r'^91'), '');
 
   @override
   void initState() {
@@ -81,7 +80,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       _error = null;
     });
 
-    final result = await _auth.verifyOtp(mobileNumber: _contact, otp: otp);
+    final result = await _auth.verifyOtp(mobileNumber: _rawMobile, otp: otp);
     if (!mounted) return;
     setState(() => _loading = false);
 
@@ -103,257 +102,162 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         return;
       case OtpPurpose.registration:
       case OtpPurpose.mobileLogin:
-        if (result.user != null) {
-          context.read<SessionController>().setFromAuth(result.user!);
-        }
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          AppRoutes.homePlaceholder,
-          (_) => false,
+        final mobile = widget.args.mobileNumber ??
+            _contact.replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp(r'^91'), '');
+        Navigator.of(context).pushReplacementNamed(
+          AppRoutes.createAccount,
+          arguments: SignupFlowArgs(
+            mobileNumber: mobile,
+            fullName: '',
+          ),
         );
         return;
     }
   }
 
   Future<void> _resend() async {
-    await _auth.sendOtp(mobileNumber: _contact);
+    await _auth.sendOtp(mobileNumber: _rawMobile);
     if (!mounted) return;
     _otpKey.currentState?.clear();
     setState(() => _error = null);
     _startTimer();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Verification code resent (use 123456)')),
+      const SnackBar(
+        content: Text('Verification code resent (use 123456)'),
+      ),
     );
-  }
-
-  Future<void> _editContact() async {
-    if (_isEmailReset) {
-      final controller = TextEditingController(text: _contact);
-      final formKey = GlobalKey<FormState>();
-      final updated = await showDialog<String>(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Edit email address'),
-            content: Form(
-              key: formKey,
-              child: AuthTextField(
-                label: 'Email Address',
-                controller: controller,
-                keyboardType: TextInputType.emailAddress,
-                prefixIcon: Icons.email_rounded,
-                validator: AuthValidators.email,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  if (formKey.currentState!.validate()) {
-                    Navigator.pop(context, controller.text.trim());
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          );
-        },
-      );
-      controller.dispose();
-      if (updated == null || !mounted) return;
-      setState(() {
-        _contact = updated;
-        _error = null;
-      });
-      await _auth.sendPasswordResetCode(identifier: updated, isEmail: true);
-      if (!mounted) return;
-      _startTimer();
-      return;
-    }
-
-    final controller = TextEditingController(
-      text: _contact
-          .replaceAll(RegExp(r'[^\d]'), '')
-          .replaceFirst(RegExp(r'^91'), ''),
-    );
-    final formKey = GlobalKey<FormState>();
-
-    final updated = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit mobile number'),
-          content: Form(
-            key: formKey,
-            child: AuthTextField(
-              label: 'Mobile Number',
-              controller: controller,
-              keyboardType: TextInputType.phone,
-              prefixIcon: Icons.phone_rounded,
-              validator: AuthValidators.mobile,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.pop(context, controller.text.trim());
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-    controller.dispose();
-    if (updated == null || !mounted) return;
-    setState(() {
-      _contact = AuthValidators.formatMobileDisplay(updated);
-      _error = null;
-    });
-    await _auth.sendOtp(mobileNumber: updated);
-    if (!mounted) return;
-    _startTimer();
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final title = _isPasswordReset ? 'Verify Code' : 'Verify Mobile Number';
-    final editLabel = _isEmailReset ? 'Edit email address' : 'Edit mobile number';
+    final title = _isPasswordReset ? 'Verify Code' : 'Verify your number';
+    final canSubmit = _otp.length == AppConstants.otpLength;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.space6,
+            AppSpacing.space4,
             AppSpacing.space6,
             AppSpacing.space6,
-            AppSpacing.space10,
           ),
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: const Icon(Icons.arrow_back_rounded),
-              ),
-              const SizedBox(height: AppSpacing.space8),
-              Container(
-                width: AppSpacing.space16,
-                height: AppSpacing.space16,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryContainer,
-                  borderRadius: AppRadius.xlAll,
-                ),
-                child: Icon(
-                  _isEmailReset ? Icons.mark_email_read_rounded : Icons.phone_android_rounded,
-                  size: AppSpacing.space8,
-                  color: AppColors.primary,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space6),
-              Text(title, style: theme.textTheme.headlineMedium),
-              const SizedBox(height: AppSpacing.space2),
-              Text(
-                'Enter the 6-digit verification code sent to',
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: AppSpacing.space2),
-              Text(
-                _contact,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onSurface,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.space8),
-              SizedBox(
-                height: AppSpacing.otpBoxHeight,
-                child: AuthOtpFields(
-                  key: _otpKey,
-                  hasError: _error != null,
-                  onChanged: (value) => setState(() {
-                    _otp = value;
-                    _error = null;
-                  }),
-                  onCompleted: _verify,
-                ),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: AppSpacing.space3),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.error_rounded,
-                      size: AppSpacing.space4,
-                      color: AppColors.error,
-                    ),
-                    const SizedBox(width: AppSpacing.space2),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.error),
+              Row(
+                children: [
+                  LoginFlowBackButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  Expanded(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ],
+                  ),
+                  const SizedBox(width: 44),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space10),
+              const Center(child: LoginFlowOtpIcon()),
+              const SizedBox(height: AppSpacing.space8),
+              Text(
+                'We\'ve sent a 6-digit code to',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space1),
+              Text(
+                _contact,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space8),
+              AuthOtpFields(
+                key: _otpKey,
+                hasError: _error != null,
+                onChanged: (value) => setState(() {
+                  _otp = value;
+                  _error = null;
+                }),
+                onCompleted: _verify,
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: AppSpacing.space2),
+                Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.error,
+                  ),
                 ),
               ],
+              const SizedBox(height: AppSpacing.space3),
+              Text(
+                'Tap the boxes to enter or paste your code',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.space8),
+              LoginFlowContinueButton(
+                label: 'Enter 6-digit code',
+                enabled: canSubmit,
+                loading: _loading,
+                onPressed: () => _verify(),
+              ),
               const SizedBox(height: AppSpacing.space8),
               Center(
                 child: _seconds > 0
                     ? Text.rich(
                         TextSpan(
-                          style: theme.textTheme.bodyMedium,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
                           children: [
-                            const TextSpan(text: 'Resend code in '),
+                            const TextSpan(text: 'Didn\'t receive the code? '),
                             TextSpan(
-                              text: '0:${_seconds.toString().padLeft(2, '0')}',
-                              style: AppTypography.labelSmallMono(
-                                color: AppColors.primary,
-                              ).copyWith(fontWeight: FontWeight.w600),
+                              text: 'Resend OTP in 0:${_seconds.toString().padLeft(2, '0')}',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                              ),
                             ),
                           ],
                         ),
+                        textAlign: TextAlign.center,
                       )
-                    : TextButton(
-                        onPressed: _resend,
-                        child: const Text('Resend Code'),
+                    : Text.rich(
+                        TextSpan(
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                          children: [
+                            const TextSpan(text: 'Didn\'t receive the code? '),
+                            TextSpan(
+                              text: 'Resend OTP',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: LoginFlowColors.link,
+                                decoration: TextDecoration.underline,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              recognizer: TapGestureRecognizer()..onTap = _resend,
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-              ),
-              const SizedBox(height: AppSpacing.space8),
-              AuthPrimaryButton(
-                label: _loading ? 'Verifying…' : 'Verify',
-                icon: Icons.verified_rounded,
-                loading: _loading,
-                enabled: _otp.length == AppConstants.otpLength,
-                onPressed: _verify,
-              ),
-              const SizedBox(height: AppSpacing.space5),
-              Center(
-                child: TextButton.icon(
-                  onPressed: _editContact,
-                  icon: const Icon(Icons.edit_rounded, size: AppSpacing.space4),
-                  label: Text(
-                    editLabel,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.onSurfaceVariant,
-                  ),
-                ),
               ),
             ],
           ),

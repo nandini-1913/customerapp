@@ -3,6 +3,7 @@ abstract final class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String createAccount = '/create-account';
+  static const String chooseProfession = '/choose-profession';
   static const String otpVerification = '/otp-verification';
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
@@ -46,12 +47,26 @@ class OtpVerificationArgs {
     required this.purpose,
     this.resetIdentifier,
     this.resetIsEmail = false,
+    this.mobileNumber,
   });
 
   final String contactDisplay;
   final OtpPurpose purpose;
   final String? resetIdentifier;
   final bool resetIsEmail;
+  /// Raw mobile digits for the signup flow after OTP.
+  final String? mobileNumber;
+}
+
+/// Arguments passed through signup steps 3 → 4.
+class SignupFlowArgs {
+  const SignupFlowArgs({
+    required this.mobileNumber,
+    required this.fullName,
+  });
+
+  final String mobileNumber;
+  final String fullName;
 }
 
 enum OtpPurpose {
