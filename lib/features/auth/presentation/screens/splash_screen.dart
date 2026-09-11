@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../../core/state/session_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -24,7 +26,13 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _navigate() async {
     await Future<void>.delayed(AppConstants.splashDuration);
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.onboarding);
+
+    final session = context.read<SessionController>();
+    final nextRoute = session.isLoggedIn
+        ? AppRoutes.homePlaceholder
+        : AppRoutes.onboarding;
+
+    Navigator.of(context).pushReplacementNamed(nextRoute);
   }
 
   @override

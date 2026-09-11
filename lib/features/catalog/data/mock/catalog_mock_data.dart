@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/catalog_models.dart';
 import 'brand_seed_data.dart';
 import 'plumbing_catalog_rows.dart';
+import 'upvc_pipe_matrix_data.dart';
 
 /// Local catalog built from Excel seed rows + brand dataset.
 /// Replace with repository/API later; keep query APIs stable.
@@ -52,12 +53,21 @@ abstract final class CatalogMockData {
   static List<ProductVariant> variantsByCategory(String categoryId) =>
       variants.where((v) => v.categoryId == categoryId).toList();
 
-  static List<ProductVariant> get upvcPipeVariants => variants
-      .where(
-        (v) =>
-            v.subCategoryId == upvcPipesSubCategoryId && v.pipeType != null,
-      )
-      .toList();
+  static List<ProductVariant> get upvcPipeVariants => upvcPipeMatrixVariants;
+
+  /// Spreadsheet-backed UPVC pipe variants (Brand × Sch 40/80 × Size).
+  static List<ProductVariant> get upvcPipeMatrixVariants =>
+      UpvcPipeMatrixData.buildVariants();
+
+  /// Normalizes schedule labels such as `SCH40` → `Sch 40`.
+  static String? normalizePipeSchedule(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    final text = raw.trim();
+    final match =
+        RegExp(r'sch\s*(\d+)', caseSensitive: false).firstMatch(text);
+    if (match != null) return 'Sch ${match.group(1)}';
+    return text;
+  }
 
   static bool isUpvcPipesSubCategory(String? subCategoryId) =>
       subCategoryId == upvcPipesSubCategoryId;
@@ -714,10 +724,17 @@ class _CatalogIndex {
           price = mrp - (mrp * discountRate);
         } else {
           final delta = _priceDelta(i, selected.length);
-          price = (product.basePrice * (1 + delta))
+          final brandFactor = _upvcBrandPriceFactor(brand.id, i);
+          mrp = (product.basePrice * (1 + delta) * (1.08 + i * 0.02) *
+                  brandFactor.mrpMultiplier)
               .roundToDouble()
-              .clamp(1.0, 999999999.0)
-              .toDouble();
+              .clamp(1.0, 999999999.0);
+          discountRate = (0.06 + brandFactor.discountDelta + (i * 0.005))
+              .clamp(0.0, 0.35);
+          purchasePrice = (product.basePrice * 0.82 * brandFactor.ppMultiplier)
+              .roundToDouble()
+              .clamp(1.0, 999999999.0);
+          price = mrp - (mrp * discountRate);
         }
 
         final stock = isPipesTubing

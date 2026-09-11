@@ -116,10 +116,28 @@ class ProductDetailArgs {
 }
 
 class UpvcPipeVariantsArgs {
-  const UpvcPipeVariantsArgs({this.subCategoryId});
+  const UpvcPipeVariantsArgs({
+    this.subCategoryId,
+    this.productId,
+    this.title,
+    this.heroImageAsset,
+    this.categoryIds,
+  });
 
   /// When null, includes all pipe types under Pipes & Tubing.
   final String? subCategoryId;
+
+  /// When set, limits the configurator to variants of this product.
+  final String? productId;
+
+  /// Display name shown on the configurator (e.g. "Pipes").
+  final String? title;
+
+  /// Shared hero image for unified section opens.
+  final String? heroImageAsset;
+
+  /// When set, limits variants to these category ids.
+  final List<String>? categoryIds;
 }
 
 class BrandProductsArgs {

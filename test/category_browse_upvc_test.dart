@@ -1,5 +1,6 @@
 import 'package:customerapp/core/routes/app_routes.dart';
 import 'package:customerapp/core/state/cart_controller.dart';
+import 'package:customerapp/core/state/catalog_controller.dart';
 import 'package:customerapp/core/state/quotation_controller.dart';
 import 'package:customerapp/core/state/recently_viewed_controller.dart';
 import 'package:customerapp/core/state/reward_controller.dart';
@@ -22,6 +23,7 @@ void main() {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SessionController()),
+        ChangeNotifierProvider(create: (_) => CatalogController()),
         ChangeNotifierProvider(create: (_) => CartController()),
         ChangeNotifierProvider(create: (_) => WishlistController()),
         ChangeNotifierProvider(create: (_) => RecentlyViewedController()),
@@ -40,6 +42,10 @@ void main() {
                 as UpvcPipeVariantsArgs?;
             return UpvcPipeVariantListScreen(
               subCategoryId: args?.subCategoryId,
+              productId: args?.productId,
+              title: args?.title,
+              heroImageAsset: args?.heroImageAsset,
+              categoryIds: args?.categoryIds,
             );
           },
         },
@@ -48,18 +54,18 @@ void main() {
     );
   }
 
-  testWidgets('CPVC opens configurator not product list', (tester) async {
+  testWidgets('pipes module opens configurator from product card', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 900));
     await tester.pumpWidget(wrap(const PipesTubingBrowseScreen()));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('CPVC'));
+    expect(find.text('Plumbing Pipes'), findsNothing);
+    expect(find.textContaining('Plumbing Pipes'), findsOneWidget);
+
+    await tester.tap(find.text('ADD').first);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('VIEW'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('CPVC Pipes'), findsWidgets);
-    expect(find.text('Filter / Sort'), findsNothing);
-    expect(find.text('4 brands available'), findsNothing);
+    expect(find.byType(UpvcPipeVariantListScreen), findsOneWidget);
+    await tester.binding.setSurfaceSize(null);
   });
 }

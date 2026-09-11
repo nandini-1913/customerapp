@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:customerapp/core/state/session_controller.dart';
 import 'package:customerapp/main.dart';
 
 void main() {
@@ -10,7 +11,11 @@ void main() {
   });
 
   testWidgets('App launches splash screen', (WidgetTester tester) async {
-    await tester.pumpWidget(const ShivaniConstructionsApp());
+    final sessionController = SessionController();
+    await sessionController.restore();
+    await tester.pumpWidget(
+      ShivaniConstructionsApp(sessionController: sessionController),
+    );
     await tester.pump();
 
     expect(find.byType(MaterialApp), findsOneWidget);

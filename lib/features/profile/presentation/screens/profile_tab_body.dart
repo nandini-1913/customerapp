@@ -130,7 +130,9 @@ class _ProfileTabBodyState extends State<ProfileTabBody> {
                 ),
                 const SizedBox(height: AppSpacing.space4),
                 OutlinedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    await context.read<SessionController>().logout();
+                    if (!context.mounted) return;
                     Navigator.of(context).pushNamedAndRemoveUntil(
                       AppRoutes.login,
                       (_) => false,

@@ -68,11 +68,11 @@ class _ChooseProfessionScreenState extends State<ChooseProfessionScreen> {
 
   int? _selectedIndex;
 
-  void _continue() {
+  Future<void> _continue() async {
     if (_selectedIndex == null) return;
     final option = _options[_selectedIndex!];
 
-    context.read<SessionController>().setFromAuth(
+    await context.read<SessionController>().setFromAuth(
       AuthUser(
         id: 'user-mobile-${widget.args.mobileNumber}',
         email: '',
@@ -82,6 +82,7 @@ class _ChooseProfessionScreenState extends State<ChooseProfessionScreen> {
       ),
     );
 
+    if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(
       AppRoutes.homePlaceholder,
       (_) => false,

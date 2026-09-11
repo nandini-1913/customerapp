@@ -1,5 +1,6 @@
 import '../../domain/models/catalog_models.dart';
 import '../mock/catalog_mock_data.dart';
+import '../mock/upvc_pipe_matrix_data.dart';
 import '../models/api_catalog_product.dart';
 
 /// Maps dashboard backend catalog JSON into existing Flutter UI models.
@@ -25,10 +26,11 @@ abstract final class CatalogApiMapper {
     final brandId = item.brandId ?? _brandIdFromName(brandName);
     final mrp = item.mrp ?? item.standardRate;
     final selling = item.sellingPrice ?? item.standardRate;
-    final discountPercent = item.discount;
-    final discountRate = discountPercent == null
-        ? (mrp > 0 ? ((mrp - selling) / mrp).clamp(0.0, 1.0) : null)
-        : (discountPercent / 100).clamp(0.0, 1.0);
+    final discountRate = _resolveDiscountRate(
+      discountField: item.discount,
+      mrp: mrp,
+      selling: selling,
+    );
     final stockQty = item.stock;
     final stockStatus = stockQty == null
         ? StockStatus.inStock
@@ -40,11 +42,13 @@ abstract final class CatalogApiMapper {
     final displayName = item.productName?.trim().isNotEmpty == true
         ? item.productName!.trim()
         : item.name.trim();
-    final pipeTypeLabel = _firstNonEmpty([
-      productGroup,
-      typeName,
-      displayName,
-    ]);
+    final scheduleType = _scheduleType(item);
+    final pipeTypeLabel = scheduleType ??
+        _firstNonEmpty([
+          productGroup,
+          typeName,
+          displayName,
+        ]);
 
     return ProductVariant(
       id: item.id,
@@ -69,7 +73,7 @@ abstract final class CatalogApiMapper {
         if (sizeLabel.isNotEmpty) 'Size': sizeLabel,
         if (item.length != null) 'Length': item.length!,
         if (productGroup != null) 'Product Group': productGroup,
-        'Type': typeName,
+        'Type': scheduleType ?? typeName,
       },
       imageAsset: '',
       imageUrl: _validImageUrl(item.imageUrl),
@@ -106,9 +110,34 @@ abstract final class CatalogApiMapper {
     return null;
   }
 
+  static String? _scheduleType(ApiCatalogProduct item) {
+    for (final candidate in [
+      item.productGroup,
+      item.type,
+      item.productName,
+      item.name,
+    ]) {
+      final normalized = CatalogMockData.normalizePipeSchedule(candidate);
+      if (normalized != null &&
+          normalized.toLowerCase().startsWith('sch')) {
+        return normalized;
+      }
+    }
+    return null;
+  }
+
+  static String? _spreadsheetSizeLabel(double mm, String? inchLabel) {
+    if (inchLabel != null && inchLabel.trim().isNotEmpty) {
+      return inchLabel.trim();
+    }
+    return UpvcPipeMatrixData.sizeLabelFor(mm);
+  }
+
   static String _sizeLabel(ApiCatalogProduct item) {
     if (item.sizeMm != null && item.sizeMm! > 0) {
       final mm = item.sizeMm!;
+      final spreadsheetLabel = _spreadsheetSizeLabel(mm, item.sizeInch);
+      if (spreadsheetLabel != null) return spreadsheetLabel;
       final asInt = mm == mm.roundToDouble();
       return asInt ? '${mm.toInt()}mm' : '${mm}mm';
     }
@@ -119,6 +148,24 @@ abstract final class CatalogApiMapper {
       return item.productCode!.trim();
     }
     return item.name.trim();
+  }
+
+  static double? _resolveDiscountRate({
+    required double? discountField,
+    required double mrp,
+    required double selling,
+  }) {
+    if (discountField != null && discountField > 0) {
+      // Backend may send 8 (percent) or 0.08 (fraction).
+      final rate = discountField > 1
+          ? discountField / 100
+          : discountField;
+      if (rate > 0) return rate.clamp(0.0, 1.0);
+    }
+    if (mrp > 0 && selling < mrp) {
+      return ((mrp - selling) / mrp).clamp(0.0, 1.0);
+    }
+    return null;
   }
 
   static String? _validImageUrl(String? url) {

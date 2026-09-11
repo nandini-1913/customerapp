@@ -30,6 +30,38 @@ void main() {
     expect(variant.pipeType, 'PIPE SDR-11');
   });
 
+  test('maps discount percent and fraction from API', () {
+    final percentItem = CatalogApiMapper.toVariants([
+      const ApiCatalogProduct(
+        id: 'cat-3',
+        name: 'Pipe A',
+        category: 'Pipes & Tubing',
+        unit: 'pcs',
+        standardRate: 100,
+        mrp: 200,
+        sellingPrice: 180,
+        discount: 10,
+        isActive: true,
+      ),
+    ]).single;
+    expect(percentItem.effectiveDiscountRate, 0.1);
+
+    final fractionItem = CatalogApiMapper.toVariants([
+      const ApiCatalogProduct(
+        id: 'cat-4',
+        name: 'Pipe B',
+        category: 'Pipes & Tubing',
+        unit: 'pcs',
+        standardRate: 100,
+        mrp: 250,
+        sellingPrice: 225,
+        discount: 0.1,
+        isActive: true,
+      ),
+    ]).single;
+    expect(fractionItem.effectiveDiscountRate, closeTo(0.1, 0.001));
+  });
+
   test('inactive API items are excluded', () {
     const item = ApiCatalogProduct(
       id: 'cat-2',

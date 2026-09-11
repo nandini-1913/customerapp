@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final result = await _auth.continueAsGuest();
     if (!mounted) return;
     if (result.success && result.user != null) {
-      context.read<SessionController>().setFromAuth(result.user!);
+      await context.read<SessionController>().setFromAuth(result.user!);
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.homePlaceholder,
         (_) => false,

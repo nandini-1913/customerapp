@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../../core/state/session_controller.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -71,7 +73,9 @@ class AuthHomePlaceholderScreen extends StatelessWidget {
               ),
               const Spacer(),
               OutlinedButton.icon(
-                onPressed: () {
+                onPressed: () async {
+                  await context.read<SessionController>().logout();
+                  if (!context.mounted) return;
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     AppRoutes.login,
                     (_) => false,

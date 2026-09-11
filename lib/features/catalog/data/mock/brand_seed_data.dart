@@ -5,6 +5,19 @@ import '../../domain/models/catalog_models.dart';
 abstract final class BrandSeedData {
   static final List<Brand> brands = [
     Brand(
+      id: 'brand-king',
+      name: 'King',
+      abbreviation: 'KNG',
+      color: 0xFF6B7280,
+      productCount: 0,
+      logoAsset: 'assets/images/brands/leader.png',
+      description: 'UPVC piping systems',
+      categoryIds: const [
+        'cat-pipes-tubing',
+        'cat-fittings',
+      ],
+    ),
+    Brand(
       id: 'brand-astral',
       name: 'Astral',
       abbreviation: 'AST',

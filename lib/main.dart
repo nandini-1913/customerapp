@@ -14,7 +14,7 @@ import 'core/state/wishlist_controller.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -24,17 +24,26 @@ void main() {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-  runApp(const ShivaniConstructionsApp());
+
+  final sessionController = SessionController();
+  await sessionController.restore();
+
+  runApp(ShivaniConstructionsApp(sessionController: sessionController));
 }
 
 class ShivaniConstructionsApp extends StatelessWidget {
-  const ShivaniConstructionsApp({super.key});
+  const ShivaniConstructionsApp({
+    super.key,
+    required this.sessionController,
+  });
+
+  final SessionController sessionController;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => SessionController()),
+        ChangeNotifierProvider.value(value: sessionController),
         ChangeNotifierProvider(
           create: (_) {
             final controller = CatalogController();

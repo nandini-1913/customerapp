@@ -122,6 +122,10 @@ abstract final class AppRouter {
         return _slide(
           UpvcPipeVariantListScreen(
             subCategoryId: args?.subCategoryId,
+            productId: args?.productId,
+            title: args?.title,
+            heroImageAsset: args?.heroImageAsset,
+            categoryIds: args?.categoryIds,
           ),
           settings,
         );

@@ -229,6 +229,21 @@ class ProductVariant {
   double? get sellingPrice =>
       mrp == null || discountRate == null ? null : mrp! - (mrp! * discountRate!);
 
+  /// Resolved discount fraction from [discountRate] or MRP vs selling [price].
+  double? get effectiveDiscountRate {
+    if (discountRate != null && discountRate! > 0) {
+      return discountRate!.clamp(0.0, 1.0);
+    }
+    final listPrice = mrp;
+    if (listPrice != null && listPrice > 0) {
+      final sell = sellingPrice ?? price;
+      if (sell < listPrice) {
+        return ((listPrice - sell) / listPrice).clamp(0.0, 1.0);
+      }
+    }
+    return discountRate;
+  }
+
   String get priceLabel => _formatInr(price);
 
   String? get mrpLabel => mrp == null ? null : _formatInr(mrp!);
@@ -239,9 +254,11 @@ class ProductVariant {
   String? get sellingPriceLabel =>
       sellingPrice == null ? null : _formatInr(sellingPrice!);
 
-  String? get discountPercentLabel => discountRate == null
-      ? null
-      : '${(discountRate! * 100).toStringAsFixed(1)}%';
+  String? get discountPercentLabel {
+    final rate = effectiveDiscountRate;
+    if (rate == null || rate <= 0) return null;
+    return '${(rate * 100).toStringAsFixed(1)}%';
+  }
 
   String get priceWithUnit => '$priceLabel / $unit';
 
